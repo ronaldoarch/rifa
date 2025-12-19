@@ -1,0 +1,28 @@
+# Docker Compose para desenvolvimento local (opcional)
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://pixuser:pixpass@postgres:5432/pixdojonathan
+      - NODE_ENV=production
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=pixuser
+      - POSTGRES_PASSWORD=pixpass
+      - POSTGRES_DB=pixdojonathan
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+

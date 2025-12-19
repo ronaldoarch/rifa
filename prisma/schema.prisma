@@ -1,0 +1,152 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  cpf           String    @unique
+  name          String
+  email         String    @unique
+  phone         String?
+  password      String?
+  credits        Float     @default(0)
+  affiliateId   String?
+  affiliate     Affiliate? @relation(fields: [affiliateId], references: [id])
+  referredBy    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  tickets       Ticket[]
+  payments      Payment[]
+  winners       Winner[]
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Raffle {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  prizeAmount Float
+  status      String   @default("active") // active, completed, upcoming
+  startDate   DateTime
+  endDate     DateTime?
+  totalTickets Int     @default(0)
+  soldTickets Int      @default(0)
+  ticketPrice Float
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tickets     Ticket[]
+  winners     Winner[]
+  promotions  Promotion[]
+}
+
+model Promotion {
+  id          String   @id @default(cuid())
+  raffleId    String?
+  raffle      Raffle?  @relation(fields: [raffleId], references: [id])
+  title       String
+  description String?
+  discount    Float    @default(0) // percentage
+  minQuantity Int      @default(1)
+  maxQuantity Int?
+  badge       String?  // "POPULAR", "16% OFF", etc.
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  raffleId  String
+  raffle    Raffle   @relation(fields: [raffleId], references: [id])
+  number    String   @unique
+  status    String   @default("active") // active, winner, void
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  amount        Float
+  status        String   @default("pending") // pending, paid, failed, refunded
+  pixQrCode     String?
+  pixCopyPaste  String?
+  paymentMethod String   @default("pix") // pix, credits
+  transactionId String?
+  tickets       Ticket[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Winner {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  raffleId    String
+  raffle      Raffle   @relation(fields: [raffleId], references: [id])
+  ticketId    String
+  prizeAmount Float
+  videoUrl    String?
+  testimonial String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Affiliate {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String?
+  commissionRate Float   @default(10) // percentage
+  code          String   @unique
+  link          String   @unique
+  totalSales    Float    @default(0)
+  totalCommissions Float @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  users         User[]
+}
+
+model Banner {
+  id          String   @id @default(cuid())
+  title       String
+  imageUrl    String
+  linkUrl     String?
+  position    String   // "main", "secondary", "footer"
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Config {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
