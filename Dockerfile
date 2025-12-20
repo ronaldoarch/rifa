@@ -42,10 +42,14 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy necessary files for standalone build
+# Note: standalone output includes server.js, node_modules, and .next in its root
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+# Verify server.js exists
+RUN ls -la server.js || (echo "ERROR: server.js not found!" && exit 1)
 
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app
