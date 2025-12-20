@@ -31,10 +31,6 @@ export default function PaymentsManager() {
     totalPages: 0,
   })
 
-  useEffect(() => {
-    fetchPayments()
-  }, [statusFilter, page])
-
   const fetchPayments = async () => {
     try {
       setLoading(true)
@@ -51,6 +47,11 @@ export default function PaymentsManager() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchPayments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, page])
 
   if (loading && payments.length === 0) {
     return <div>Carregando...</div>

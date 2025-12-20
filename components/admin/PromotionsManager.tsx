@@ -321,7 +321,7 @@ export default function PromotionsManager() {
               </div>
               <div>
                 <label className="block text-gray-700 font-bold mb-2">
-                  Badge (ex: "POPULAR", "16% OFF")
+                  Badge (ex: &quot;POPULAR&quot;, &quot;16% OFF&quot;)
                 </label>
                 <input
                   type="text"

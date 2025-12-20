@@ -136,6 +136,7 @@ export default function BannersManager() {
           <div key={banner.id} className="bg-white p-4 rounded-lg shadow">
             <div className="mb-4">
               {banner.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={banner.imageUrl}
                   alt={banner.title}

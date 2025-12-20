@@ -32,10 +32,6 @@ export default function UsersManager() {
     totalPages: 0,
   })
 
-  useEffect(() => {
-    fetchUsers()
-  }, [search, page])
-
   const fetchUsers = async () => {
     try {
       setLoading(true)
@@ -51,6 +47,11 @@ export default function UsersManager() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchUsers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, page])
 
   if (loading && users.length === 0) {
     return <div>Carregando...</div>
