@@ -12,26 +12,103 @@ function PurchaseContent() {
   const [quantity, setQuantity] = useState(10)
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credits'>('pix')
   const [showPixCode, setShowPixCode] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [pixQrCode, setPixQrCode] = useState<string>('')
+  const [pixCopyPaste, setPixCopyPaste] = useState<string>('')
+  const [userCredits, setUserCredits] = useState(0)
+  const [raffleId, setRaffleId] = useState<string>('')
 
   useEffect(() => {
     const qty = searchParams.get('quantity')
+    const raffle = searchParams.get('raffleId')
     if (qty) {
       setQuantity(parseInt(qty))
     }
+    if (raffle) {
+      setRaffleId(raffle)
+    }
+    // TODO: Buscar créditos do usuário logado
+    fetchUserCredits()
   }, [searchParams])
+
+  const fetchUserCredits = async () => {
+    try {
+      // TODO: Implementar endpoint para buscar créditos do usuário
+      // const response = await fetch('/api/user/credits')
+      // const data = await response.json()
+      // setUserCredits(data.credits || 0)
+      setUserCredits(0)
+    } catch (error) {
+      console.error('Error fetching credits:', error)
+    }
+  }
 
   const basePrice = 19.95
   const totalPrice = basePrice * quantity
   const discount = quantity >= 15 ? totalPrice * 0.16 : 0
   const finalPrice = totalPrice - discount
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (paymentMethod === 'pix') {
-      setShowPixCode(true)
-      // TODO: Generate PIX QR code
+      setLoading(true)
+      try {
+        // Criar pagamento via API
+        const response = await fetch('/api/payments/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'temp-user-id', // TODO: Pegar do contexto de autenticação
+            raffleId: raffleId || 'default-raffle-id',
+            quantity,
+            paymentMethod: 'pix',
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setPixQrCode(data.payment.pixQrCode || '')
+          setPixCopyPaste(data.payment.pixCopyPaste || '')
+          setShowPixCode(true)
+        } else {
+          alert('Erro ao gerar pagamento PIX')
+        }
+      } catch (error) {
+        console.error('Error creating payment:', error)
+        alert('Erro ao processar pagamento')
+      } finally {
+        setLoading(false)
+      }
     } else {
-      // TODO: Process credit payment
-      router.push('/sucesso')
+      // Pagamento com créditos
+      if (userCredits < finalPrice) {
+        alert('Créditos insuficientes')
+        return
+      }
+
+      setLoading(true)
+      try {
+        const response = await fetch('/api/payments/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'temp-user-id', // TODO: Pegar do contexto de autenticação
+            raffleId: raffleId || 'default-raffle-id',
+            quantity,
+            paymentMethod: 'credits',
+          }),
+        })
+
+        if (response.ok) {
+          router.push('/sucesso')
+        } else {
+          alert('Erro ao processar pagamento com créditos')
+        }
+      } catch (error) {
+        console.error('Error processing credit payment:', error)
+        alert('Erro ao processar pagamento')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -46,21 +123,21 @@ function PurchaseContent() {
             {/* Left side - Purchase details */}
             <div className="space-y-6">
               <div className="bg-gray-50 p-6 rounded-lg">
-                <h2 className="text-xl font-bold mb-4">Resumo da Compra</h2>
+                <h2 className="text-xl font-bold mb-4 text-gray-900">Resumo da Compra</h2>
                 
                 <div className="flex items-center justify-between mb-4">
-                  <span>Quantidade de cotas:</span>
+                  <span className="text-gray-900">Quantidade de cotas:</span>
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="bg-gray-200 p-2 rounded hover:bg-gray-300"
+                      className="bg-gray-200 p-2 rounded hover:bg-gray-300 text-gray-900"
                     >
                       <Minus size={20} />
                     </button>
-                    <span className="text-xl font-bold">{quantity}</span>
+                    <span className="text-xl font-bold text-gray-900">{quantity}</span>
                     <button
                       onClick={() => setQuantity(quantity + 1)}
-                      className="bg-gray-200 p-2 rounded hover:bg-gray-300"
+                      className="bg-gray-200 p-2 rounded hover:bg-gray-300 text-gray-900"
                     >
                       <Plus size={20} />
                     </button>
@@ -68,7 +145,7 @@ function PurchaseContent() {
                 </div>
 
                 <div className="space-y-2 border-t pt-4">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-gray-900">
                     <span>Subtotal:</span>
                     <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
                   </div>
@@ -78,7 +155,7 @@ function PurchaseContent() {
                       <span>- R$ {discount.toFixed(2).replace('.', ',')}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-xl font-bold border-t pt-2">
+                  <div className="flex justify-between text-xl font-bold border-t pt-2 text-gray-900">
                     <span>Total:</span>
                     <span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
                   </div>
@@ -87,7 +164,7 @@ function PurchaseContent() {
 
               {/* Payment method selection */}
               <div className="bg-gray-50 p-6 rounded-lg">
-                <h2 className="text-xl font-bold mb-4">Forma de Pagamento</h2>
+                <h2 className="text-xl font-bold mb-4 text-gray-900">Forma de Pagamento</h2>
                 
                 <div className="space-y-3">
                   <button
@@ -98,9 +175,9 @@ function PurchaseContent() {
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <QrCode size={24} />
+                    <QrCode size={24} className={paymentMethod === 'pix' ? 'text-green-600' : 'text-gray-600'} />
                     <div className="text-left">
-                      <div className="font-bold">PIX</div>
+                      <div className={`font-bold ${paymentMethod === 'pix' ? 'text-green-600' : 'text-gray-900'}`}>PIX</div>
                       <div className="text-sm text-gray-600">Pagamento instantâneo</div>
                     </div>
                   </button>
@@ -113,9 +190,9 @@ function PurchaseContent() {
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <CreditCard size={24} />
+                    <CreditCard size={24} className={paymentMethod === 'credits' ? 'text-green-600' : 'text-gray-600'} />
                     <div className="text-left">
-                      <div className="font-bold">Créditos da Plataforma</div>
+                      <div className={`font-bold ${paymentMethod === 'credits' ? 'text-green-600' : 'text-gray-900'}`}>Créditos da Plataforma</div>
                       <div className="text-sm text-gray-600">Saldo disponível: R$ 0,00</div>
                     </div>
                   </button>
@@ -127,23 +204,39 @@ function PurchaseContent() {
             <div className="space-y-6">
               {showPixCode && paymentMethod === 'pix' ? (
                 <div className="bg-gray-50 p-6 rounded-lg text-center">
-                  <h3 className="text-xl font-bold mb-4">Escaneie o QR Code</h3>
-                  <div className="bg-white p-4 rounded-lg mb-4 inline-block">
-                    <div className="w-64 h-64 bg-gray-200 flex items-center justify-center">
-                      <QrCode size={128} className="text-gray-400" />
+                  <h3 className="text-xl font-bold mb-4 text-gray-900">Escaneie o QR Code</h3>
+                  {pixQrCode ? (
+                    <div className="bg-white p-4 rounded-lg mb-4 inline-block">
+                      <img
+                        src={pixQrCode}
+                        alt="QR Code PIX"
+                        className="w-64 h-64"
+                      />
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-white p-4 rounded-lg mb-4 inline-block">
+                      <div className="w-64 h-64 bg-gray-200 flex items-center justify-center">
+                        <QrCode size={128} className="text-gray-400" />
+                      </div>
+                    </div>
+                  )}
                   <p className="text-sm text-gray-600 mb-4">
                     Ou copie e cole o código PIX:
                   </p>
                   <div className="bg-white p-3 rounded border-2 border-dashed mb-4">
-                    <code className="text-xs break-all">
-                      00020126580014BR.GOV.BCB.PIX0136123e4567-e89b-12d3-a456-4266141740005204000053039865405{finalPrice.toFixed(2)}5802BR5925PIX DO JONATHAN6009SAO PAULO62070503***6304
+                    <code className="text-xs break-all text-gray-900">
+                      {pixCopyPaste || 'Gerando código PIX...'}
                     </code>
                   </div>
                   <button
-                    onClick={() => navigator.clipboard.writeText('PIX_CODE_HERE')}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                    onClick={() => {
+                      if (pixCopyPaste) {
+                        navigator.clipboard.writeText(pixCopyPaste)
+                        alert('Código PIX copiado!')
+                      }
+                    }}
+                    disabled={!pixCopyPaste}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Copiar código PIX
                   </button>
@@ -151,7 +244,10 @@ function PurchaseContent() {
                     Após o pagamento, aguarde a confirmação automática
                   </p>
                   <button
-                    onClick={() => setPaymentMethod('credits')}
+                    onClick={() => {
+                      setShowPixCode(false)
+                      setPaymentMethod('credits')
+                    }}
                     className="mt-4 text-sm text-blue-600 hover:text-blue-700"
                   >
                     Alterar forma de pagamento
@@ -159,14 +255,14 @@ function PurchaseContent() {
                 </div>
               ) : (
                 <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-xl font-bold mb-4">Tutorial de Pagamento</h3>
+                  <h3 className="text-xl font-bold mb-4 text-gray-900">Tutorial de Pagamento</h3>
                   <div className="space-y-4 text-sm">
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center flex-shrink-0">
                         1
                       </div>
                       <div>
-                        <p className="font-bold">Escaneie o QR Code</p>
+                        <p className="font-bold text-gray-900">Escaneie o QR Code</p>
                         <p className="text-gray-600">Use o app do seu banco para escanear</p>
                       </div>
                     </div>
@@ -175,7 +271,7 @@ function PurchaseContent() {
                         2
                       </div>
                       <div>
-                        <p className="font-bold">Confirme o pagamento</p>
+                        <p className="font-bold text-gray-900">Confirme o pagamento</p>
                         <p className="text-gray-600">Verifique os dados e confirme</p>
                       </div>
                     </div>
@@ -184,7 +280,7 @@ function PurchaseContent() {
                         3
                       </div>
                       <div>
-                        <p className="font-bold">Aguarde a confirmação</p>
+                        <p className="font-bold text-gray-900">Aguarde a confirmação</p>
                         <p className="text-gray-600">Seu pagamento será processado automaticamente</p>
                       </div>
                     </div>
@@ -198,9 +294,14 @@ function PurchaseContent() {
 
                   <button
                     onClick={handlePurchase}
-                    className="w-full mt-6 bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors"
+                    disabled={loading}
+                    className="w-full mt-6 bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {paymentMethod === 'pix' ? 'Gerar QR Code PIX' : 'Pagar com Créditos'}
+                    {loading
+                      ? 'Processando...'
+                      : paymentMethod === 'pix'
+                      ? 'Gerar QR Code PIX'
+                      : 'Pagar com Créditos'}
                   </button>
                 </div>
               )}
