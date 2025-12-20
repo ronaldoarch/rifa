@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { 
   LayoutDashboard, 
   Users, 
@@ -10,8 +9,11 @@ import {
   Image, 
   Gift,
   Settings,
-  BarChart3
+  BarChart3,
+  Tag
 } from 'lucide-react'
+import Dashboard from '@/components/admin/Dashboard'
+import BannersManager from '@/components/admin/BannersManager'
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -20,6 +22,7 @@ export default function AdminPanel() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'banners', label: 'Banners', icon: Image },
     { id: 'raffles', label: 'Rifas', icon: Ticket },
+    { id: 'promotions', label: 'Promoções', icon: Tag },
     { id: 'winners', label: 'Ganhadores', icon: Gift },
     { id: 'users', label: 'Usuários', icon: Users },
     { id: 'payments', label: 'Pagamentos', icon: DollarSign },
@@ -31,7 +34,7 @@ export default function AdminPanel() {
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-gray-800 text-white min-h-screen">
+        <aside className="w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0">
           <div className="p-6">
             <h1 className="text-2xl font-bold">PIX DO JONATHAN</h1>
             <p className="text-gray-400 text-sm mt-2">Painel Administrativo</p>
@@ -56,44 +59,10 @@ export default function AdminPanel() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-8">
-          {activeTab === 'dashboard' && (
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Dashboard</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-gray-600 mb-2">Total de Usuários</h3>
-                  <p className="text-3xl font-bold">0</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-gray-600 mb-2">Arrecadação Total</h3>
-                  <p className="text-3xl font-bold">R$ 0,00</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-gray-600 mb-2">Rifas Ativas</h3>
-                  <p className="text-3xl font-bold">0</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-gray-600 mb-2">Tickets Vendidos</h3>
-                  <p className="text-3xl font-bold">0</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'banners' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold">Gerenciar Banners</h2>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                  Novo Banner
-                </button>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Nenhum banner cadastrado</p>
-              </div>
-            </div>
-          )}
+        <main className="flex-1 ml-64 p-8">
+          {activeTab === 'dashboard' && <Dashboard />}
+          
+          {activeTab === 'banners' && <BannersManager />}
 
           {activeTab === 'raffles' && (
             <div>
@@ -104,7 +73,21 @@ export default function AdminPanel() {
                 </button>
               </div>
               <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Nenhuma rifa cadastrada</p>
+                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'promotions' && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold">Gerenciar Promoções</h2>
+                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                  Nova Promoção
+                </button>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
               </div>
             </div>
           )}
@@ -130,7 +113,7 @@ export default function AdminPanel() {
             <div>
               <h2 className="text-3xl font-bold mb-6">Usuários</h2>
               <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Nenhum usuário cadastrado</p>
+                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
               </div>
             </div>
           )}
@@ -139,7 +122,7 @@ export default function AdminPanel() {
             <div>
               <h2 className="text-3xl font-bold mb-6">Pagamentos</h2>
               <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Nenhum pagamento registrado</p>
+                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
               </div>
             </div>
           )}
@@ -153,7 +136,7 @@ export default function AdminPanel() {
                 </button>
               </div>
               <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Nenhum afiliado cadastrado</p>
+                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
               </div>
             </div>
           )}
@@ -192,6 +175,26 @@ export default function AdminPanel() {
                     placeholder="5511999999999"
                   />
                 </div>
+                <div>
+                  <label className="block text-gray-700 font-bold mb-2">
+                    Cor Principal (Hex)
+                  </label>
+                  <input
+                    type="color"
+                    className="w-full h-12 border rounded-lg"
+                    defaultValue="#FFD700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-bold mb-2">
+                    Cor Secundária (Hex)
+                  </label>
+                  <input
+                    type="color"
+                    className="w-full h-12 border rounded-lg"
+                    defaultValue="#2d5016"
+                  />
+                </div>
                 <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
                   Salvar Configurações
                 </button>
@@ -203,4 +206,3 @@ export default function AdminPanel() {
     </div>
   )
 }
-
