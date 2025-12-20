@@ -117,7 +117,7 @@ export default function AdminPanel() {
       <div className="min-h-screen bg-gray-100">
         <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0">
+        <aside className="hidden md:block w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0">
           <div className="p-6">
             <h1 className="text-2xl font-bold">PIX DO JONATHAN</h1>
             <p className="text-gray-400 text-sm mt-2">Painel Administrativo</p>
@@ -142,7 +142,7 @@ export default function AdminPanel() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 ml-64 p-8 text-gray-900">
+        <main className="flex-1 md:ml-64 p-4 sm:p-6 md:p-8 text-gray-900">
           {activeTab === 'dashboard' && (
             <div>
               <Dashboard />

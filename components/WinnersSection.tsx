@@ -8,26 +8,26 @@ export default function WinnersSection() {
   ]
 
   return (
-    <div className="bg-gray-50 py-12">
+    <div className="bg-gray-50 py-8 sm:py-12">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-4">Raspou. Achou. É pix!</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3 sm:mb-4">Raspou. Achou. É pix!</h2>
         
         {/* Winners gallery */}
-        <div className="flex space-x-4 overflow-x-auto pb-4 mb-8">
+        <div className="flex space-x-3 sm:space-x-4 overflow-x-auto pb-4 mb-6 sm:mb-8">
           {winners.map((winner, index) => (
             <div
               key={index}
-              className="flex-shrink-0 w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center"
+              className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-300 flex items-center justify-center"
             >
-              <span className="text-sm font-medium">{winner.name}</span>
+              <span className="text-xs sm:text-sm font-medium px-2 text-center">{winner.name}</span>
             </div>
           ))}
         </div>
 
-        <h3 className="text-2xl font-bold text-center mb-8">Confira quem mudou de vida</h3>
+        <h3 className="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8">Confira quem mudou de vida</h3>
         
         {/* Video testimonials grid */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {winners.map((winner, index) => (
             <div key={index} className="relative bg-white rounded-lg shadow-md overflow-hidden">
               <div className="aspect-video bg-gray-200 flex items-center justify-center">
@@ -41,9 +41,9 @@ export default function WinnersSection() {
                   </svg>
                 </div>
               </div>
-              <div className="p-4">
-                <p className="font-bold text-lg">{winner.prize}</p>
-                <p className="text-gray-600">{winner.name}</p>
+              <div className="p-3 sm:p-4">
+                <p className="font-bold text-base sm:text-lg">{winner.prize}</p>
+                <p className="text-sm sm:text-base text-gray-600">{winner.name}</p>
               </div>
             </div>
           ))}
