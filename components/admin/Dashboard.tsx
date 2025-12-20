@@ -87,25 +87,25 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold mb-6">Dashboard</h2>
+      <h2 className="text-3xl font-bold mb-6 text-gray-900">Dashboard</h2>
       
       {/* Cards de métricas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Total de Usuários</h3>
-          <p className="text-3xl font-bold">{stats.totalUsers}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Arrecadação Total</h3>
-          <p className="text-3xl font-bold">{formatCurrency(stats.totalRevenue)}</p>
+          <p className="text-3xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Rifas Ativas</h3>
-          <p className="text-3xl font-bold">{stats.activeRaffles}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.activeRaffles}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Tickets Vendidos</h3>
-          <p className="text-3xl font-bold">{stats.totalTickets}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalTickets}</p>
         </div>
       </div>
 
@@ -113,41 +113,41 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Total de Rifas</h3>
-          <p className="text-3xl font-bold">{stats.totalRaffles}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalRaffles}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Pagamentos</h3>
-          <p className="text-3xl font-bold">{stats.totalPayments}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalPayments}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Ganhadores</h3>
-          <p className="text-3xl font-bold">{stats.totalWinners}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalWinners}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Afiliados Ativos</h3>
-          <p className="text-3xl font-bold">{stats.totalAffiliates}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalAffiliates}</p>
         </div>
       </div>
 
       {/* Pagamentos recentes */}
       <div className="bg-white p-6 rounded-lg shadow mb-8">
-        <h3 className="text-xl font-bold mb-4">Pagamentos Recentes</h3>
+        <h3 className="text-xl font-bold mb-4 text-gray-900">Pagamentos Recentes</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left p-2">Usuário</th>
-                <th className="text-left p-2">Valor</th>
-                <th className="text-left p-2">Status</th>
-                <th className="text-left p-2">Data</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Usuário</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Valor</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Status</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Data</th>
               </tr>
             </thead>
             <tbody>
               {stats.recentPayments && stats.recentPayments.length > 0 ? (
                 stats.recentPayments.map((payment) => (
                   <tr key={payment.id} className="border-b">
-                    <td className="p-2">{payment.user?.name || 'N/A'}</td>
-                    <td className="p-2">{formatCurrency(payment.amount)}</td>
+                    <td className="p-2 text-gray-900">{payment.user?.name || 'N/A'}</td>
+                    <td className="p-2 text-gray-900">{formatCurrency(payment.amount)}</td>
                     <td className="p-2">
                       <span
                         className={`px-2 py-1 rounded text-sm ${
@@ -161,7 +161,7 @@ export default function Dashboard() {
                         {payment.status}
                       </span>
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 text-gray-900">
                       {new Date(payment.createdAt).toLocaleDateString('pt-BR')}
                     </td>
                   </tr>
@@ -180,25 +180,25 @@ export default function Dashboard() {
 
       {/* Top Afiliados */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-xl font-bold mb-4">Top Afiliados</h3>
+        <h3 className="text-xl font-bold mb-4 text-gray-900">Top Afiliados</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left p-2">Nome</th>
-                <th className="text-left p-2">Vendas</th>
-                <th className="text-left p-2">Comissões</th>
-                <th className="text-left p-2">Usuários</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Nome</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Vendas</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Comissões</th>
+                <th className="text-left p-2 text-gray-700 font-semibold">Usuários</th>
               </tr>
             </thead>
             <tbody>
               {stats.topAffiliates && stats.topAffiliates.length > 0 ? (
                 stats.topAffiliates.map((affiliate) => (
                   <tr key={affiliate.id} className="border-b">
-                    <td className="p-2">{affiliate.name}</td>
-                    <td className="p-2">{formatCurrency(affiliate.totalSales)}</td>
-                    <td className="p-2">{formatCurrency(affiliate.totalCommissions)}</td>
-                    <td className="p-2">{affiliate._count?.users || 0}</td>
+                    <td className="p-2 text-gray-900">{affiliate.name}</td>
+                    <td className="p-2 text-gray-900">{formatCurrency(affiliate.totalSales)}</td>
+                    <td className="p-2 text-gray-900">{formatCurrency(affiliate.totalCommissions)}</td>
+                    <td className="p-2 text-gray-900">{affiliate._count?.users || 0}</td>
                   </tr>
                 ))
               ) : (

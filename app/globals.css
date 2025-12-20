@@ -26,6 +26,15 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+/* Force text visibility in admin */
+.admin-content {
+  color: #111827 !important;
+}
+
+.admin-content * {
+  color: inherit;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

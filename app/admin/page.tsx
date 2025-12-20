@@ -79,7 +79,7 @@ export default function AdminPanel() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 ml-64 p-8">
+        <main className="flex-1 ml-64 p-8 text-gray-900">
           {activeTab === 'dashboard' && (
             <div>
               <Dashboard />
