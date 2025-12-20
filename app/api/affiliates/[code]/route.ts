@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  context: { params: Promise<{ code: string }> }
 ) {
+  const params = await context.params
   try {
     const affiliate = await prisma.affiliate.findUnique({
       where: { code: params.code },

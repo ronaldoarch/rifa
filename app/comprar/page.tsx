@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { Minus, Plus, CreditCard, QrCode } from 'lucide-react'
 
-export default function PurchasePage() {
+function PurchaseContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [quantity, setQuantity] = useState(10)
@@ -210,6 +210,21 @@ export default function PurchasePage() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function PurchasePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    }>
+      <PurchaseContent />
+    </Suspense>
   )
 }
 
