@@ -49,6 +49,15 @@ function PurchaseContent() {
   const finalPrice = totalPrice - discount
 
   const handlePurchase = async () => {
+    // Track purchase event with UTMfy
+    if (typeof window !== 'undefined' && (window as any).utmify) {
+      (window as any).utmify.track('purchase_initiated', {
+        payment_method: paymentMethod,
+        quantity,
+        amount: finalPrice,
+      })
+    }
+
     if (paymentMethod === 'pix') {
       setLoading(true)
       try {
@@ -69,6 +78,14 @@ function PurchaseContent() {
           setPixQrCode(data.payment.pixQrCode || '')
           setPixCopyPaste(data.payment.pixCopyPaste || '')
           setShowPixCode(true)
+          
+          // Track PIX QR code generated
+          if (typeof window !== 'undefined' && (window as any).utmify) {
+            (window as any).utmify.track('pix_qr_generated', {
+              payment_id: data.payment.id,
+              amount: finalPrice,
+            })
+          }
         } else {
           alert('Erro ao gerar pagamento PIX')
         }
@@ -99,6 +116,14 @@ function PurchaseContent() {
         })
 
         if (response.ok) {
+          // Track successful payment
+          if (typeof window !== 'undefined' && (window as any).utmify) {
+            (window as any).utmify.track('purchase_completed', {
+              payment_method: 'credits',
+              quantity,
+              amount: finalPrice,
+            })
+          }
           router.push('/sucesso')
         } else {
           alert('Erro ao processar pagamento com créditos')

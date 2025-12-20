@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
-import UTMTracker from '@/components/UTMTracker'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -60,9 +59,17 @@ export default function RootLayout({
             `}
           </Script>
         )}
+        {/* UTMfy Script - Tracking de UTMs */}
+        <Script
+          src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+          data-utmify-prevent-xcod-sck
+          data-utmify-prevent-subids
+          strategy="afterInteractive"
+          async
+          defer
+        />
       </head>
       <body className={inter.className}>
-        <UTMTracker />
         {children}
       </body>
     </html>

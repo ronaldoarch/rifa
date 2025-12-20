@@ -2,6 +2,7 @@
 
 import { Minus, Plus, ShoppingCart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 interface PurchaseBoxProps {
   quantity: number
@@ -16,7 +17,18 @@ export default function PurchaseBox({ quantity, setQuantity }: PurchaseBoxProps)
   const quantityOptions = [3, 10, 15, 20, 30]
 
   const handlePurchase = () => {
-    router.push(`/comprar?quantity=${quantity}`)
+    // UTMfy will automatically append UTM parameters to the URL
+    const url = `/comprar?quantity=${quantity}`
+    
+    // Track purchase intent event
+    if (typeof window !== 'undefined' && (window as any).utmify) {
+      (window as any).utmify.track('purchase_intent', {
+        quantity,
+        price,
+      })
+    }
+    
+    router.push(url)
   }
 
   return (
