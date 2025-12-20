@@ -34,6 +34,69 @@ const BannersManager = dynamic(() => import('@/components/admin/BannersManager')
   ),
 })
 
+const RafflesManager = dynamic(() => import('@/components/admin/RafflesManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const PromotionsManager = dynamic(() => import('@/components/admin/PromotionsManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const WinnersManager = dynamic(() => import('@/components/admin/WinnersManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const UsersManager = dynamic(() => import('@/components/admin/UsersManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const PaymentsManager = dynamic(() => import('@/components/admin/PaymentsManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const AffiliatesManager = dynamic(() => import('@/components/admin/AffiliatesManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const SettingsManager = dynamic(() => import('@/components/admin/SettingsManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard')
 
@@ -94,139 +157,43 @@ export default function AdminPanel() {
 
           {activeTab === 'raffles' && (
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold">Gerenciar Rifas</h2>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                  Nova Rifa
-                </button>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
-              </div>
+              <RafflesManager />
             </div>
           )}
 
           {activeTab === 'promotions' && (
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold">Gerenciar Promoções</h2>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                  Nova Promoção
-                </button>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
-              </div>
+              <PromotionsManager />
             </div>
           )}
 
           {activeTab === 'winners' && (
             <div>
-              <h2 className="text-3xl font-bold mb-6">Gerenciar Ganhadores</h2>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600 mb-4">Adicionar vídeo de ganhador:</p>
-                <input
-                  type="file"
-                  accept="video/*"
-                  className="mb-4"
-                />
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                  Upload
-                </button>
-              </div>
+              <WinnersManager />
             </div>
           )}
 
           {activeTab === 'users' && (
             <div>
-              <h2 className="text-3xl font-bold mb-6">Usuários</h2>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
-              </div>
+              <UsersManager />
             </div>
           )}
 
           {activeTab === 'payments' && (
             <div>
-              <h2 className="text-3xl font-bold mb-6">Pagamentos</h2>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
-              </div>
+              <PaymentsManager />
             </div>
           )}
 
           {activeTab === 'affiliates' && (
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold">Afiliados</h2>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                  Novo Afiliado
-                </button>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
-              </div>
+              <AffiliatesManager />
             </div>
           )}
 
           {activeTab === 'settings' && (
             <div>
-              <h2 className="text-3xl font-bold mb-6">Configurações</h2>
-              <div className="bg-white p-6 rounded-lg shadow space-y-4">
-                <div>
-                  <label className="block text-gray-700 font-bold mb-2">
-                    Google Tag Manager ID
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="GTM-XXXXXXX"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-2">
-                    Meta Pixel ID
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="YOUR_PIXEL_ID"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-2">
-                    WhatsApp de Contato
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="5511999999999"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-2">
-                    Cor Principal (Hex)
-                  </label>
-                  <input
-                    type="color"
-                    className="w-full h-12 border rounded-lg"
-                    defaultValue="#FFD700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-2">
-                    Cor Secundária (Hex)
-                  </label>
-                  <input
-                    type="color"
-                    className="w-full h-12 border rounded-lg"
-                    defaultValue="#2d5016"
-                  />
-                </div>
-                <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
-                  Salvar Configurações
-                </button>
-              </div>
+              <SettingsManager />
             </div>
           )}
         </main>
