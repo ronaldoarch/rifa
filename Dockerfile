@@ -8,16 +8,22 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Install all dependencies including devDependencies for build
+RUN npm ci --include=dev
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+# Copy all source files including components
 COPY . .
+# Ensure components directory exists
+RUN ls -la components/ || echo "Components directory check"
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
+# Don't set NODE_ENV=production during build to allow devDependencies
+# ENV NODE_ENV=production
 
 # Generate Prisma Client
 RUN npx prisma generate
