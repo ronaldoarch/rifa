@@ -117,7 +117,7 @@ function PurchaseContent() {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-800 mb-8">Finalizar Compra</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Finalizar Compra</h1>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Left side - Purchase details */}
@@ -193,7 +193,7 @@ function PurchaseContent() {
                     <CreditCard size={24} className={paymentMethod === 'credits' ? 'text-green-600' : 'text-gray-600'} />
                     <div className="text-left">
                       <div className={`font-bold ${paymentMethod === 'credits' ? 'text-green-600' : 'text-gray-900'}`}>Créditos da Plataforma</div>
-                      <div className="text-sm text-gray-600">Saldo disponível: R$ 0,00</div>
+                      <div className="text-sm text-gray-600">Saldo disponível: R$ {userCredits.toFixed(2).replace('.', ',')}</div>
                     </div>
                   </button>
                 </div>
