@@ -12,8 +12,27 @@ import {
   BarChart3,
   Tag
 } from 'lucide-react'
-import Dashboard from '@/components/admin/Dashboard'
-import BannersManager from '@/components/admin/BannersManager'
+import dynamic from 'next/dynamic'
+import ErrorBoundary from '@/components/admin/ErrorBoundary'
+
+// Lazy load components to prevent SSR issues
+const Dashboard = dynamic(() => import('@/components/admin/Dashboard'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const BannersManager = dynamic(() => import('@/components/admin/BannersManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -31,8 +50,9 @@ export default function AdminPanel() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-100">
+        <div className="flex">
         {/* Sidebar */}
         <aside className="w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0">
           <div className="p-6">
@@ -60,9 +80,17 @@ export default function AdminPanel() {
 
         {/* Main content */}
         <main className="flex-1 ml-64 p-8">
-          {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'dashboard' && (
+            <div>
+              <Dashboard />
+            </div>
+          )}
           
-          {activeTab === 'banners' && <BannersManager />}
+          {activeTab === 'banners' && (
+            <div>
+              <BannersManager />
+            </div>
+          )}
 
           {activeTab === 'raffles' && (
             <div>
@@ -202,7 +230,8 @@ export default function AdminPanel() {
             </div>
           )}
         </main>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }
