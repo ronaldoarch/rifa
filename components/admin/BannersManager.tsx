@@ -131,7 +131,8 @@ export default function BannersManager() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {banners.map((banner) => (
+        {banners && banners.length > 0 ? (
+          banners.map((banner) => (
           <div key={banner.id} className="bg-white p-4 rounded-lg shadow">
             <div className="mb-4">
               {banner.imageUrl ? (
@@ -175,7 +176,12 @@ export default function BannersManager() {
               </button>
             </div>
           </div>
-        ))}
+          ))
+        ) : (
+          <div className="col-span-full text-center text-gray-500 py-8">
+            Nenhum banner cadastrado
+          </div>
+        )}
       </div>
 
       {showModal && (

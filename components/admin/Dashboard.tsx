@@ -27,10 +27,37 @@ export default function Dashboard() {
   const fetchStats = async () => {
     try {
       const response = await fetch('/api/admin/stats')
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats')
+      }
       const data = await response.json()
-      setStats(data)
+      setStats({
+        totalUsers: data.totalUsers || 0,
+        totalRaffles: data.totalRaffles || 0,
+        activeRaffles: data.activeRaffles || 0,
+        totalTickets: data.totalTickets || 0,
+        totalRevenue: data.totalRevenue || 0,
+        totalPayments: data.totalPayments || 0,
+        totalWinners: data.totalWinners || 0,
+        totalAffiliates: data.totalAffiliates || 0,
+        recentPayments: data.recentPayments || [],
+        topAffiliates: data.topAffiliates || [],
+      })
     } catch (error) {
       console.error('Error fetching stats:', error)
+      // Set default values on error
+      setStats({
+        totalUsers: 0,
+        totalRaffles: 0,
+        activeRaffles: 0,
+        totalTickets: 0,
+        totalRevenue: 0,
+        totalPayments: 0,
+        totalWinners: 0,
+        totalAffiliates: 0,
+        recentPayments: [],
+        topAffiliates: [],
+      })
     } finally {
       setLoading(false)
     }
@@ -45,7 +72,17 @@ export default function Dashboard() {
   }
 
   if (!stats) {
-    return <div className="text-red-600">Erro ao carregar estatísticas</div>
+    return (
+      <div className="text-red-600 p-4">
+        <p>Erro ao carregar estatísticas</p>
+        <button
+          onClick={fetchStats}
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -106,28 +143,36 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {stats.recentPayments.map((payment) => (
-                <tr key={payment.id} className="border-b">
-                  <td className="p-2">{payment.user?.name || 'N/A'}</td>
-                  <td className="p-2">{formatCurrency(payment.amount)}</td>
-                  <td className="p-2">
-                    <span
-                      className={`px-2 py-1 rounded text-sm ${
-                        payment.status === 'paid'
-                          ? 'bg-green-100 text-green-800'
-                          : payment.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    {new Date(payment.createdAt).toLocaleDateString('pt-BR')}
+              {stats.recentPayments && stats.recentPayments.length > 0 ? (
+                stats.recentPayments.map((payment) => (
+                  <tr key={payment.id} className="border-b">
+                    <td className="p-2">{payment.user?.name || 'N/A'}</td>
+                    <td className="p-2">{formatCurrency(payment.amount)}</td>
+                    <td className="p-2">
+                      <span
+                        className={`px-2 py-1 rounded text-sm ${
+                          payment.status === 'paid'
+                            ? 'bg-green-100 text-green-800'
+                            : payment.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {payment.status}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      {new Date(payment.createdAt).toLocaleDateString('pt-BR')}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-500">
+                    Nenhum pagamento recente
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -147,14 +192,22 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {stats.topAffiliates.map((affiliate) => (
-                <tr key={affiliate.id} className="border-b">
-                  <td className="p-2">{affiliate.name}</td>
-                  <td className="p-2">{formatCurrency(affiliate.totalSales)}</td>
-                  <td className="p-2">{formatCurrency(affiliate.totalCommissions)}</td>
-                  <td className="p-2">{affiliate._count.users}</td>
+              {stats.topAffiliates && stats.topAffiliates.length > 0 ? (
+                stats.topAffiliates.map((affiliate) => (
+                  <tr key={affiliate.id} className="border-b">
+                    <td className="p-2">{affiliate.name}</td>
+                    <td className="p-2">{formatCurrency(affiliate.totalSales)}</td>
+                    <td className="p-2">{formatCurrency(affiliate.totalCommissions)}</td>
+                    <td className="p-2">{affiliate._count?.users || 0}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-500">
+                    Nenhum afiliado encontrado
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
