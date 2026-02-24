@@ -3,27 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --site-primary: #FFD700;
+  --site-secondary: #2d5016;
+  --site-text: #111827;
+  --site-bg: #ffffff;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: var(--site-text);
+  background: var(--site-bg);
 }
 
 /* Force text visibility in admin */
@@ -38,6 +26,21 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .bg-site-primary {
+    background-color: var(--site-primary);
+  }
+  .text-site-primary {
+    color: var(--site-primary);
+  }
+  .bg-site-secondary {
+    background-color: var(--site-secondary);
+  }
+  .text-site-secondary {
+    color: var(--site-secondary);
+  }
+  .bg-site-bg {
+    background-color: var(--site-bg);
   }
 }
 

@@ -1,14 +1,36 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Instagram, Facebook, Youtube } from 'lucide-react'
+import { Instagram, Facebook, Youtube, ShieldCheck } from 'lucide-react'
 
 export default function Footer() {
+  const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
+  const [safeBrowsing, setSafeBrowsing] = useState<{ safe: boolean | null; checked: boolean } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/site-config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.platformName) setPlatformName(data.platformName)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/safe-browsing/status')
+      .then((res) => res.json())
+      .then((data) => setSafeBrowsing(data))
+      .catch(() => setSafeBrowsing({ safe: null, checked: false }))
+  }, [])
+
   return (
     <footer className="bg-gray-800 text-white py-8 sm:py-12">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
           {/* Left side */}
           <div>
-            <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">PIX DO JONATHAN</h3>
+            <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">{platformName}</h3>
             <div className="flex space-x-4 mb-4 sm:mb-6">
               <a href="#" className="hover:text-yellow-400 transition-colors">
                 <Instagram size={20} className="sm:w-6 sm:h-6" />
@@ -27,11 +49,27 @@ export default function Footer() {
             <div className="text-white font-bold text-sm sm:text-base">Via Cap</div>
           </div>
 
-          {/* Right side */}
+          {/* Right side - Selo de site seguro */}
           <div className="flex justify-start md:justify-end">
-            <div className="bg-white p-3 sm:p-4 rounded">
-              <div className="text-green-600 font-bold text-xs sm:text-sm">Google Safe Browsing</div>
-            </div>
+            <a
+              href="https://developers.google.com/safe-browsing?hl=pt-br"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white p-3 sm:p-4 rounded-lg block hover:opacity-90 transition-opacity border border-green-200 max-w-[200px]"
+              title="Saiba mais sobre navegação segura"
+            >
+              <div className="flex items-center gap-2 text-green-700">
+                <ShieldCheck size={24} className="flex-shrink-0" />
+                <div>
+                  <div className="font-bold text-sm">Site seguro</div>
+                  <div className="text-xs text-green-600">
+                    {safeBrowsing?.checked && safeBrowsing?.safe === true
+                      ? 'Verificado pelo Google Safe Browsing'
+                      : 'Google Safe Browsing'}
+                  </div>
+                </div>
+              </div>
+            </a>
           </div>
         </div>
 
@@ -44,7 +82,7 @@ export default function Footer() {
           <Link href="/contato" className="hover:text-yellow-400">Contato</Link>
           <span>Sac ViaCap - (51) 3303-3851</span>
           <span>Ouvidoria ViaCap - 0800 874 1505</span>
-          <span>PIX DO JONATHAN - 30.682.309/0001-70</span>
+          <span>{platformName} - 30.682.309/0001-70</span>
         </div>
       </div>
     </footer>

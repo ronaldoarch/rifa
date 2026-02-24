@@ -4,136 +4,126 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { Minus, Plus, CreditCard, QrCode } from 'lucide-react'
+import { Minus, Plus, QrCode } from 'lucide-react'
 
 function PurchaseContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [quantity, setQuantity] = useState(10)
-  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credits'>('pix')
   const [showPixCode, setShowPixCode] = useState(false)
   const [loading, setLoading] = useState(false)
   const [pixQrCode, setPixQrCode] = useState<string>('')
   const [pixCopyPaste, setPixCopyPaste] = useState<string>('')
-  const [userCredits, setUserCredits] = useState(0)
   const [raffleId, setRaffleId] = useState<string>('')
+  const [ticketPrice, setTicketPrice] = useState(19.95)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => setUserId(data.user?.id ?? null))
+      .catch(() => setUserId(null))
+  }, [])
 
   useEffect(() => {
     const qty = searchParams.get('quantity')
     const raffle = searchParams.get('raffleId')
     if (qty) {
-      setQuantity(parseInt(qty))
+      const n = parseInt(qty, 10)
+      if (!isNaN(n)) setQuantity(n)
     }
     if (raffle) {
       setRaffleId(raffle)
+      // Preço será atualizado se tivermos que buscar a rifa
     }
-    // TODO: Buscar créditos do usuário logado
-    fetchUserCredits()
   }, [searchParams])
 
-  const fetchUserCredits = async () => {
-    try {
-      // TODO: Implementar endpoint para buscar créditos do usuário
-      // const response = await fetch('/api/user/credits')
-      // const data = await response.json()
-      // setUserCredits(data.credits || 0)
-      setUserCredits(0)
-    } catch (error) {
-      console.error('Error fetching credits:', error)
+  // Carregar rifa: quando não há raffleId na URL usa a rifa principal; senão busca preço da rifa da URL
+  useEffect(() => {
+    const fromUrl = searchParams.get('raffleId')
+    let cancelled = false
+    if (fromUrl) {
+      fetch(`/api/raffles/${fromUrl}`)
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (cancelled || !data) return
+          const price = Number(data.ticketPrice)
+          if (Number.isFinite(price)) setTicketPrice(price)
+          const minPurchase = data.minPurchaseAmount != null ? Number(data.minPurchaseAmount) : 0
+          if (minPurchase > 0 && price > 0) {
+            setQuantity((q) => Math.max(q, Math.ceil(minPurchase / price)))
+          }
+        })
+        .catch(() => {})
+      return () => { cancelled = true }
     }
-  }
+    fetch('/api/raffles/principal')
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled || !data?.id) return
+        setRaffleId(data.id)
+        const price = Number(data.ticketPrice)
+        if (Number.isFinite(price)) setTicketPrice(price)
+        const minPurchase = data.minPurchaseAmount != null ? Number(data.minPurchaseAmount) : 0
+        if (minPurchase > 0 && price > 0) {
+          setQuantity((q) => Math.max(q, Math.ceil(minPurchase / price)))
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [searchParams])
 
-  const basePrice = 19.95
-  const totalPrice = basePrice * quantity
+  const totalPrice = ticketPrice * quantity
   const discount = quantity >= 15 ? totalPrice * 0.16 : 0
   const finalPrice = totalPrice - discount
 
   const handlePurchase = async () => {
+    if (!raffleId) {
+      alert('Aguarde, carregando a rifa...')
+      return
+    }
     // Track purchase event with UTMfy
     if (typeof window !== 'undefined' && (window as any).utmify) {
       (window as any).utmify.track('purchase_initiated', {
-        payment_method: paymentMethod,
+        payment_method: 'pix',
         quantity,
         amount: finalPrice,
       })
     }
 
-    if (paymentMethod === 'pix') {
-      setLoading(true)
-      try {
-        // Criar pagamento via API
-        const response = await fetch('/api/payments/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: 'temp-user-id', // TODO: Pegar do contexto de autenticação
-            raffleId: raffleId || 'default-raffle-id',
-            quantity,
-            paymentMethod: 'pix',
-          }),
-        })
+    setLoading(true)
+    try {
+      const response = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId || 'temp-user-id',
+          raffleId: raffleId,
+          quantity,
+          paymentMethod: 'pix',
+        }),
+      })
 
-        if (response.ok) {
-          const data = await response.json()
-          setPixQrCode(data.payment.pixQrCode || '')
-          setPixCopyPaste(data.payment.pixCopyPaste || '')
-          setShowPixCode(true)
-          
-          // Track PIX QR code generated
-          if (typeof window !== 'undefined' && (window as any).utmify) {
-            (window as any).utmify.track('pix_qr_generated', {
-              payment_id: data.payment.id,
-              amount: finalPrice,
-            })
-          }
-        } else {
-          alert('Erro ao gerar pagamento PIX')
+      if (response.ok) {
+        const data = await response.json()
+        setPixQrCode(data.payment.pixQrCode || '')
+        setPixCopyPaste(data.payment.pixCopyPaste || '')
+        setShowPixCode(true)
+
+        if (typeof window !== 'undefined' && (window as any).utmify) {
+          (window as any).utmify.track('pix_qr_generated', {
+            payment_id: data.payment.id,
+            amount: finalPrice,
+          })
         }
-      } catch (error) {
-        console.error('Error creating payment:', error)
-        alert('Erro ao processar pagamento')
-      } finally {
-        setLoading(false)
+      } else {
+        alert('Erro ao gerar pagamento PIX')
       }
-    } else {
-      // Pagamento com créditos
-      if (userCredits < finalPrice) {
-        alert('Créditos insuficientes')
-        return
-      }
-
-      setLoading(true)
-      try {
-        const response = await fetch('/api/payments/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: 'temp-user-id', // TODO: Pegar do contexto de autenticação
-            raffleId: raffleId || 'default-raffle-id',
-            quantity,
-            paymentMethod: 'credits',
-          }),
-        })
-
-        if (response.ok) {
-          // Track successful payment
-          if (typeof window !== 'undefined' && (window as any).utmify) {
-            (window as any).utmify.track('purchase_completed', {
-              payment_method: 'credits',
-              quantity,
-              amount: finalPrice,
-            })
-          }
-          router.push('/sucesso')
-        } else {
-          alert('Erro ao processar pagamento com créditos')
-        }
-      } catch (error) {
-        console.error('Error processing credit payment:', error)
-        alert('Erro ao processar pagamento')
-      } finally {
-        setLoading(false)
-      }
+    } catch (error) {
+      console.error('Error creating payment:', error)
+      alert('Erro ao processar pagamento')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -192,42 +182,20 @@ function PurchaseContent() {
                 <h2 className="text-xl font-bold mb-4 text-gray-900">Forma de Pagamento</h2>
                 
                 <div className="space-y-3">
-                  <button
-                    onClick={() => setPaymentMethod('pix')}
-                    className={`w-full p-4 border-2 rounded-lg flex items-center space-x-3 transition-colors ${
-                      paymentMethod === 'pix'
-                        ? 'border-green-600 bg-green-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <QrCode size={24} className={paymentMethod === 'pix' ? 'text-green-600' : 'text-gray-600'} />
+                  <div className="w-full p-4 border-2 border-green-600 bg-green-50 rounded-lg flex items-center space-x-3">
+                    <QrCode size={24} className="text-green-600" />
                     <div className="text-left">
-                      <div className={`font-bold ${paymentMethod === 'pix' ? 'text-green-600' : 'text-gray-900'}`}>PIX</div>
+                      <div className="font-bold text-green-600">PIX</div>
                       <div className="text-sm text-gray-600">Pagamento instantâneo</div>
                     </div>
-                  </button>
-
-                  <button
-                    onClick={() => setPaymentMethod('credits')}
-                    className={`w-full p-4 border-2 rounded-lg flex items-center space-x-3 transition-colors ${
-                      paymentMethod === 'credits'
-                        ? 'border-green-600 bg-green-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <CreditCard size={24} className={paymentMethod === 'credits' ? 'text-green-600' : 'text-gray-600'} />
-                    <div className="text-left">
-                      <div className={`font-bold ${paymentMethod === 'credits' ? 'text-green-600' : 'text-gray-900'}`}>Créditos da Plataforma</div>
-                      <div className="text-sm text-gray-600">Saldo disponível: R$ {userCredits.toFixed(2).replace('.', ',')}</div>
-                    </div>
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Right side - PIX QR Code or Payment button */}
             <div className="space-y-6">
-              {showPixCode && paymentMethod === 'pix' ? (
+              {showPixCode ? (
                 <div className="bg-gray-50 p-6 rounded-lg text-center">
                   <h3 className="text-xl font-bold mb-4 text-gray-900">Escaneie o QR Code</h3>
                   {pixQrCode ? (
@@ -269,10 +237,7 @@ function PurchaseContent() {
                     Após o pagamento, aguarde a confirmação automática
                   </p>
                   <button
-                    onClick={() => {
-                      setShowPixCode(false)
-                      setPaymentMethod('credits')
-                    }}
+                    onClick={() => setShowPixCode(false)}
                     className="mt-4 text-sm text-blue-600 hover:text-blue-700"
                   >
                     Alterar forma de pagamento
@@ -322,11 +287,7 @@ function PurchaseContent() {
                     disabled={loading}
                     className="w-full mt-6 bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading
-                      ? 'Processando...'
-                      : paymentMethod === 'pix'
-                      ? 'Gerar QR Code PIX'
-                      : 'Pagar com Créditos'}
+                    {loading ? 'Processando...' : 'Gerar QR Code PIX'}
                   </button>
                 </div>
               )}

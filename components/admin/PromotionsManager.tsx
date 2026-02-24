@@ -50,7 +50,7 @@ export default function PromotionsManager() {
     try {
       const response = await fetch('/api/admin/promotions')
       const data = await response.json()
-      setPromotions(data)
+      setPromotions(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching promotions:', error)
     } finally {
@@ -62,7 +62,7 @@ export default function PromotionsManager() {
     try {
       const response = await fetch('/api/admin/raffles')
       const data = await response.json()
-      setRaffles(data)
+      setRaffles(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching raffles:', error)
     }

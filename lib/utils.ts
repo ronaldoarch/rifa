@@ -5,6 +5,16 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
+/** Converte valor no formato brasileiro para número (ex: "30.000" → 30000, "1.500,50" → 1500.5) */
+export function parseBrazilianNumber(value: string | number | null | undefined): number {
+  if (value == null || value === '') return 0
+  const s = String(value).trim()
+  if (s === '') return 0
+  const cleaned = s.replace(/\./g, '').replace(',', '.')
+  const n = parseFloat(cleaned)
+  return Number.isFinite(n) ? n : 0
+}
+
 export function formatCPF(cpf: string): string {
   return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
 }

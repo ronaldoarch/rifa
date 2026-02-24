@@ -7,7 +7,7 @@ import ScrollBanner from '@/components/ScrollBanner'
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-site-bg">
       <Header />
       <ScrollBanner />
       <HeroBanner />

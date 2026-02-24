@@ -46,15 +46,17 @@ model Raffle {
   status      String   @default("active") // active, completed, upcoming
   startDate   DateTime
   endDate     DateTime?
-  totalTickets Int     @default(0)
-  soldTickets Int      @default(0)
+  totalTickets BigInt  @default(0)
+  soldTickets BigInt   @default(0)
   ticketPrice Float
+  minPurchaseAmount Float? @default(0) // valor mínimo de compra em R$
   imageUrl    String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  tickets     Ticket[]
-  winners     Winner[]
-  promotions  Promotion[]
+  tickets        Ticket[]
+  winners        Winner[]
+  promotions     Promotion[]
+  premiumNumbers PremiumNumber[]
 }
 
 model Promotion {
@@ -78,11 +80,22 @@ model Ticket {
   user      User     @relation(fields: [userId], references: [id])
   raffleId  String
   raffle    Raffle   @relation(fields: [raffleId], references: [id])
-  number    String   @unique
+  number    String   @unique // formato: raffleId-000001 (número sequencial na rifa)
   status    String   @default("active") // active, winner, void
   paymentId String?
   payment   Payment? @relation(fields: [paymentId], references: [id])
   createdAt DateTime @default(now())
+}
+
+// Números premiados: quando o usuário compra um bilhete com este número, ganha o valor na hora
+model PremiumNumber {
+  id          String   @id @default(cuid())
+  raffleId    String
+  raffle      Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  number      String   // número do bilhete na rifa (ex: "1", "7", "100")
+  prizeAmount Float
+  createdAt   DateTime @default(now())
+  @@unique([raffleId, number])
 }
 
 model Payment {
@@ -140,6 +153,17 @@ model Banner {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model ShowcaseItem {
+  id        String   @id @default(cuid())
+  mediaType String   // "image" | "video"
+  mediaUrl  String
+  name      String
+  prize     String   // ex: "R$ 1.000,00"
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Config {

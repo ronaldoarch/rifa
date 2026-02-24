@@ -2,14 +2,31 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
+import { prisma } from '@/lib/prisma'
+import ThemeInjector from '@/components/ThemeInjector'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: 'PIX DO JONATHAN - 5 Milhões em Prêmios',
-  description: 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
-  manifest: '/manifest.json',
+export const viewport = {
   themeColor: '#FFD700',
+}
+
+async function getPlatformName(): Promise<string> {
+  try {
+    const c = await prisma.config.findUnique({ where: { key: 'PLATFORM_NAME' } })
+    return c?.value || 'PIX DO JONATHAN'
+  } catch {
+    return 'PIX DO JONATHAN'
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const platformName = await getPlatformName()
+  return {
+    title: `${platformName} - 5 Milhões em Prêmios`,
+    description: 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
+    manifest: '/manifest.json',
+  }
 }
 
 export default function RootLayout({
@@ -69,7 +86,8 @@ export default function RootLayout({
           defer
         />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
+        <ThemeInjector />
         {children}
       </body>
     </html>

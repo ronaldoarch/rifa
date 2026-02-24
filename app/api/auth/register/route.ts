@@ -54,14 +54,18 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+    const cookie = `session=${token}; Path=/; HttpOnly; Max-Age=2592000; SameSite=Lax`
+    return NextResponse.json(
+      {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+        token,
       },
-      token,
-    })
+      { headers: { 'Set-Cookie': cookie } }
+    )
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(

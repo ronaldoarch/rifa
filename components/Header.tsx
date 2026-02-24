@@ -1,30 +1,58 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { User } from 'lucide-react'
 
 export default function Header() {
   const pathname = usePathname()
+  const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/site-config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.platformName) setPlatformName(data.platformName)
+        if (data.logoUrl) setLogoUrl(data.logoUrl)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => setUser(data.user || null))
+      .catch(() => setUser(null))
+  }, [pathname])
 
   const navItems = [
     { href: '/', label: 'Início' },
     { href: '/resultados', label: 'Resultados' },
-    { href: '/sobre', label: 'O Pix do Jonathan' },
-    { href: '/beneficios', label: 'Clube de Benefícios' },
+    { href: '/sobre', label: 'Sobre' },
     { href: '/contato', label: 'Contato' },
   ]
 
   return (
     <>
       <div className="bg-gray-800 h-1"></div>
-      <header className="bg-yellow-400 shadow-md">
+      <header className="bg-site-primary shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center gap-2">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoUrl}
+                  alt={platformName}
+                  className="h-8 sm:h-9 md:h-10 w-auto object-contain"
+                />
+              ) : null}
               <span className="text-lg sm:text-xl md:text-2xl font-bold text-black">
-                PIX DO JONATHAN
+                {platformName}
               </span>
             </Link>
 
@@ -53,13 +81,23 @@ export default function Header() {
             </button>
 
             {/* User Button */}
-            <Link
-              href="/login"
-              className="hidden sm:flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
-            >
-              <User size={18} className="sm:w-5 sm:h-5" />
-              <span className="hidden md:inline">entre ou cadastre-se</span>
-            </Link>
+            {user ? (
+              <Link
+                href="/perfil"
+                className="hidden sm:flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
+              >
+                <User size={18} className="sm:w-5 sm:h-5" />
+                <span className="hidden md:inline truncate max-w-[140px]">{user.name}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="hidden sm:flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
+              >
+                <User size={18} className="sm:w-5 sm:h-5" />
+                <span className="hidden md:inline">entre ou cadastre-se</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>

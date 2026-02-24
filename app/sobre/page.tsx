@@ -28,7 +28,7 @@ export default function AboutPage() {
               </Link>
             </div>
 
-            <div className="bg-white border-2 border-gray-200 rounded-lg p-6 mb-6">
+            <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-bold mb-4">Termos de uso</h2>
               <p className="text-gray-600 mb-4">
                 Leia nossos termos e condições de uso da plataforma.
@@ -38,19 +38,6 @@ export default function AboutPage() {
                 className="text-green-600 hover:text-green-700 font-medium"
               >
                 Ler termos de uso →
-              </Link>
-            </div>
-
-            <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-4">Regulamento</h2>
-              <p className="text-gray-600 mb-4">
-                Consulte o regulamento completo dos sorteios e premiações.
-              </p>
-              <Link
-                href="/regulamento"
-                className="text-green-600 hover:text-green-700 font-medium"
-              >
-                Ver regulamento →
               </Link>
             </div>
           </div>

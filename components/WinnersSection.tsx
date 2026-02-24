@@ -1,56 +1,97 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+
+interface ShowcaseItem {
+  id: string
+  mediaType: string
+  mediaUrl: string
+  name: string
+  prize: string
+  order: number
+}
+
 export default function WinnersSection() {
-  const winners = [
-    { name: 'João Silva', prize: 'R$ 1.000,00', image: '/winner1.jpg' },
-    { name: 'Maria Santos', prize: 'R$ 500,00', image: '/winner2.jpg' },
-    { name: 'Pedro Costa', prize: 'R$ 2.000,00', image: '/winner3.jpg' },
-  ]
+  const [sectionTitle, setSectionTitle] = useState('Premios todos os dias')
+  const [items, setItems] = useState<ShowcaseItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/site-config').then((r) => r.json()),
+      fetch('/api/showcase').then((r) => r.json()),
+    ])
+      .then(([config, list]) => {
+        setSectionTitle(config.dailyPrizesSectionTitle || 'Premios todos os dias')
+        setItems(Array.isArray(list) ? list : [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
-    <div className="bg-gray-50 py-8 sm:py-12">
+    <div className="bg-gray-50 py-8 sm:py-12 text-gray-900">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3 sm:mb-4">Raspou. Achou. É pix!</h2>
-        
-        {/* Winners gallery */}
-        <div className="flex space-x-3 sm:space-x-4 overflow-x-auto pb-4 mb-6 sm:mb-8">
-          {winners.map((winner, index) => (
-            <div
-              key={index}
-              className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-300 flex items-center justify-center"
-            >
-              <span className="text-xs sm:text-sm font-medium px-2 text-center">{winner.name}</span>
-            </div>
-          ))}
-        </div>
+        <h3 className="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8 text-gray-900">
+          {sectionTitle}
+        </h3>
 
-        <h3 className="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8">Confira quem mudou de vida</h3>
-        
-        {/* Video testimonials grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-          {winners.map((winner, index) => (
-            <div key={index} className="relative bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="aspect-video bg-gray-200 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-black bg-opacity-50 flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-white ml-1"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                  </svg>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            Em breve, prêmios todos os dias aqui.
+          </div>
+        ) : (
+          <div className="flex flex-wrap justify-end gap-3 sm:gap-4">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="w-[100px] sm:w-[130px] flex flex-col rounded-xl sm:rounded-2xl border-4 sm:border-[6px] border-blue-900 shadow-lg overflow-hidden bg-blue-900"
+              >
+                <div className="bg-blue-900 text-white text-center py-1 px-1 text-[10px] sm:text-xs font-bold uppercase leading-tight">
+                  Ganhou {item.prize}
+                </div>
+                <div className="w-full aspect-[9/16] bg-gray-900 flex items-center justify-center overflow-hidden">
+                  {item.mediaType === 'video' ? (
+                    <video
+                      src={item.mediaUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : item.mediaUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.mediaUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
+                      <svg
+                        className="w-8 h-8 text-white ml-1"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <div className="bg-blue-900 text-white text-center py-1 px-1 text-[10px] sm:text-xs font-semibold truncate" title={item.name}>
+                  {item.name}
                 </div>
               </div>
-              <div className="p-3 sm:p-4">
-                <p className="font-bold text-base sm:text-lg">{winner.prize}</p>
-                <p className="text-sm sm:text-base text-gray-600">{winner.name}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="text-center mt-8">
-          <a href="/resultados" className="text-green-600 hover:text-green-700 font-medium">
+          <a href="/resultados" className="text-green-700 hover:text-green-800 font-semibold">
             ver mais →
           </a>
         </div>
@@ -58,4 +99,3 @@ export default function WinnersSection() {
     </div>
   )
 }
-

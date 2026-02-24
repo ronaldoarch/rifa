@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, Image as ImageIcon } from 'lucide-react'
+import { Plus, Edit, Trash2, Image as ImageIcon, Upload } from 'lucide-react'
 
 interface Banner {
   id: string
@@ -26,6 +26,27 @@ export default function BannersManager() {
     isActive: true,
     order: 0,
   })
+  const [uploadingImage, setUploadingImage] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('type', 'banner')
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (data.url) setFormData((f) => ({ ...f, imageUrl: data.url }))
+      else alert(data.error || 'Erro no upload')
+    } catch {
+      alert('Erro ao enviar imagem')
+    } finally {
+      setUploadingImage(false)
+      e.target.value = ''
+    }
+  }
 
   useEffect(() => {
     fetchBanners()
@@ -35,7 +56,7 @@ export default function BannersManager() {
     try {
       const response = await fetch('/api/admin/banners')
       const data = await response.json()
-      setBanners(data)
+      setBanners(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching banners:', error)
     } finally {
@@ -208,17 +229,42 @@ export default function BannersManager() {
               </div>
               <div>
                 <label className="block text-gray-700 font-bold mb-2">
-                  URL da Imagem *
+                  Imagem do banner *
                 </label>
+                <div className="flex flex-wrap gap-2 items-start">
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg cursor-pointer hover:bg-green-700 font-medium">
+                    <Upload size={18} />
+                    {uploadingImage ? 'Enviando...' : 'Enviar imagem'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                    />
+                  </label>
+                  <span className="text-sm text-gray-500 self-center">ou cole a URL abaixo</span>
+                </div>
                 <input
-                  type="url"
+                  type="text"
                   value={formData.imageUrl}
                   onChange={(e) =>
                     setFormData({ ...formData, imageUrl: e.target.value })
                   }
-                  className="w-full px-4 py-2 border rounded-lg"
+                  className="mt-2 w-full px-4 py-2 border rounded-lg"
+                  placeholder="https://... ou /uploads/banner/arquivo.jpg"
                   required
                 />
+                {formData.imageUrl ? (
+                  <div className="mt-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={formData.imageUrl}
+                      alt="Preview"
+                      className="max-h-24 rounded border border-gray-200"
+                    />
+                  </div>
+                ) : null}
               </div>
               <div>
                 <label className="block text-gray-700 font-bold mb-2">
@@ -245,7 +291,7 @@ export default function BannersManager() {
                   className="w-full px-4 py-2 border rounded-lg"
                   required
                 >
-                  <option value="main">Principal</option>
+                  <option value="main">Principal (banner verde da página inicial)</option>
                   <option value="secondary">Secundário</option>
                   <option value="footer">Rodapé</option>
                 </select>

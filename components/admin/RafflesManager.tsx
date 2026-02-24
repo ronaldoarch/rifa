@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, Ticket } from 'lucide-react'
+import { Plus, Edit, Trash2, Ticket, Upload } from 'lucide-react'
 
 interface Raffle {
   id: string
@@ -14,6 +14,7 @@ interface Raffle {
   totalTickets: number
   soldTickets: number
   ticketPrice: number
+  minPurchaseAmount?: number | null
   imageUrl: string | null
   _count?: {
     tickets: number
@@ -35,8 +36,30 @@ export default function RafflesManager() {
     endDate: '',
     totalTickets: '',
     ticketPrice: '',
+    minPurchaseAmount: '',
     imageUrl: '',
   })
+  const [uploadingImage, setUploadingImage] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('type', 'raffle')
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (data.url) setFormData((f) => ({ ...f, imageUrl: data.url }))
+      else alert(data.error || 'Erro no upload')
+    } catch {
+      alert('Erro ao enviar imagem')
+    } finally {
+      setUploadingImage(false)
+      e.target.value = ''
+    }
+  }
 
   useEffect(() => {
     fetchRaffles()
@@ -46,7 +69,7 @@ export default function RafflesManager() {
     try {
       const response = await fetch('/api/admin/raffles')
       const data = await response.json()
-      setRaffles(data)
+      setRaffles(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching raffles:', error)
     } finally {
@@ -109,6 +132,7 @@ export default function RafflesManager() {
         : '',
       totalTickets: raffle.totalTickets.toString(),
       ticketPrice: raffle.ticketPrice.toString(),
+      minPurchaseAmount: raffle.minPurchaseAmount != null ? raffle.minPurchaseAmount.toString() : '',
       imageUrl: raffle.imageUrl || '',
     })
     setShowModal(true)
@@ -122,8 +146,9 @@ export default function RafflesManager() {
       status: 'active',
       startDate: '',
       endDate: '',
-      totalTickets: '',
+      totalTickets: '100000', // padrão Loteria Federal: 100.000 bilhetes (00000 a 99999)
       ticketPrice: '',
+      minPurchaseAmount: '',
       imageUrl: '',
     })
     setEditingRaffle(null)
@@ -325,14 +350,31 @@ export default function RafflesManager() {
                   <label className="block text-gray-700 font-bold mb-2">
                     Total de Tickets
                   </label>
-                  <input
-                    type="number"
-                    value={formData.totalTickets}
-                    onChange={(e) =>
-                      setFormData({ ...formData, totalTickets: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="number"
+                      value={formData.totalTickets}
+                      onChange={(e) =>
+                        setFormData({ ...formData, totalTickets: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border rounded-lg"
+                      min={1}
+                      placeholder="Ex: 100000"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, totalTickets: '100000' })
+                      }
+                      className="whitespace-nowrap px-3 py-2 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-sm font-medium hover:bg-amber-200"
+                      title="Padrão Loteria Federal: 100.000 bilhetes (00000 a 99999)"
+                    >
+                      Loteria Federal (100.000)
+                    </button>
+                  </div>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Bilhetes com <strong>6 dígitos</strong> (000001 a 999999). Padrão Loteria Federal: 100.000.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-gray-700 font-bold mb-2">
@@ -354,16 +396,60 @@ export default function RafflesManager() {
               </div>
               <div>
                 <label className="block text-gray-700 font-bold mb-2">
-                  URL da Imagem
+                  Valor mínimo de compra (R$)
                 </label>
                 <input
-                  type="url"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={formData.minPurchaseAmount}
+                  onChange={(e) =>
+                    setFormData({ ...formData, minPurchaseAmount: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+                <p className="text-gray-500 text-sm mt-1">
+                  Deixe em branco ou 0 para não exigir valor mínimo.
+                </p>
+              </div>
+              <div>
+                <label className="block text-gray-700 font-bold mb-2">
+                  Imagem da rifa
+                </label>
+                <div className="flex flex-wrap gap-2 items-center mb-2">
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg cursor-pointer hover:bg-green-700 font-medium text-sm">
+                    <Upload size={16} />
+                    {uploadingImage ? 'Enviando...' : 'Enviar imagem'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                    />
+                  </label>
+                  <span className="text-sm text-gray-500">ou cole a URL</span>
+                </div>
+                <input
+                  type="text"
                   value={formData.imageUrl}
                   onChange={(e) =>
                     setFormData({ ...formData, imageUrl: e.target.value })
                   }
                   className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="https://... ou /uploads/raffle/arquivo.jpg"
                 />
+                {formData.imageUrl ? (
+                  <div className="mt-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={formData.imageUrl}
+                      alt="Preview"
+                      className="max-h-24 rounded border border-gray-200"
+                    />
+                  </div>
+                ) : null}
               </div>
               <div className="flex space-x-4">
                 <button

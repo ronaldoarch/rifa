@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   LayoutDashboard, 
   Users, 
@@ -10,7 +10,10 @@ import {
   Gift,
   Settings,
   BarChart3,
-  Tag
+  Tag,
+  Video,
+  Award,
+  Key
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/admin/ErrorBoundary'
@@ -61,6 +64,15 @@ const WinnersManager = dynamic(() => import('@/components/admin/WinnersManager')
   ),
 })
 
+const PremiumNumbersManager = dynamic(() => import('@/components/admin/PremiumNumbersManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
 const UsersManager = dynamic(() => import('@/components/admin/UsersManager'), {
   ssr: false,
   loading: () => (
@@ -97,18 +109,49 @@ const SettingsManager = dynamic(() => import('@/components/admin/SettingsManager
   ),
 })
 
+const GateboxCredentialsManager = dynamic(() => import('@/components/admin/GateboxCredentialsManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
+const ShowcaseManager = dynamic(() => import('@/components/admin/ShowcaseManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+})
+
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
+
+  useEffect(() => {
+    fetch('/api/admin/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.PLATFORM_NAME) setPlatformName(data.PLATFORM_NAME)
+      })
+      .catch(() => {})
+  }, [])
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'banners', label: 'Banners', icon: Image },
     { id: 'raffles', label: 'Rifas', icon: Ticket },
     { id: 'promotions', label: 'Promoções', icon: Tag },
+    { id: 'showcase', label: 'Prêmios todos os dias', icon: Video },
     { id: 'winners', label: 'Ganhadores', icon: Gift },
+    { id: 'premium-numbers', label: 'Bilhetes premiados', icon: Award },
     { id: 'users', label: 'Usuários', icon: Users },
     { id: 'payments', label: 'Pagamentos', icon: DollarSign },
     { id: 'affiliates', label: 'Afiliados', icon: BarChart3 },
+    { id: 'gatebox', label: 'Gatebox (PIX)', icon: Key },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ]
 
@@ -119,7 +162,7 @@ export default function AdminPanel() {
         {/* Sidebar */}
         <aside className="hidden md:block w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0">
           <div className="p-6">
-            <h1 className="text-2xl font-bold">PIX DO JONATHAN</h1>
+            <h1 className="text-2xl font-bold">{platformName}</h1>
             <p className="text-gray-400 text-sm mt-2">Painel Administrativo</p>
           </div>
           <nav className="mt-8">
@@ -167,9 +210,21 @@ export default function AdminPanel() {
             </div>
           )}
 
+          {activeTab === 'showcase' && (
+            <div>
+              <ShowcaseManager />
+            </div>
+          )}
+
           {activeTab === 'winners' && (
             <div>
               <WinnersManager />
+            </div>
+          )}
+
+          {activeTab === 'premium-numbers' && (
+            <div>
+              <PremiumNumbersManager />
             </div>
           )}
 
@@ -188,6 +243,12 @@ export default function AdminPanel() {
           {activeTab === 'affiliates' && (
             <div>
               <AffiliatesManager />
+            </div>
+          )}
+
+          {activeTab === 'gatebox' && (
+            <div>
+              <GateboxCredentialsManager />
             </div>
           )}
 

@@ -51,7 +51,7 @@ export default function WinnersManager() {
     try {
       const response = await fetch('/api/admin/winners')
       const data = await response.json()
-      setWinners(data)
+      setWinners(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching winners:', error)
     } finally {
@@ -63,7 +63,7 @@ export default function WinnersManager() {
     try {
       const response = await fetch('/api/admin/raffles')
       const data = await response.json()
-      setRaffles(data)
+      setRaffles(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching raffles:', error)
     }

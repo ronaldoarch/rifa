@@ -42,7 +42,7 @@ export default function AffiliatesManager() {
     try {
       const response = await fetch('/api/admin/affiliates')
       const data = await response.json()
-      setAffiliates(data)
+      setAffiliates(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching affiliates:', error)
     } finally {

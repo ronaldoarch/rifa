@@ -1,110 +1,180 @@
 'use client'
 
-import { useState } from 'react'
-import PurchaseBox from './PurchaseBox'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { formatCurrency } from '@/lib/utils'
+
+interface Raffle {
+  id: string
+  title: string
+  description: string | null
+  prizeAmount: number
+  status: string
+  startDate: string
+  endDate: string | null
+  totalTickets: number
+  soldTickets: number
+  ticketPrice: number
+  minPurchaseAmount?: number | null
+  imageUrl: string | null
+}
+
+const QUICK_QUANTITIES = [5, 10, 15, 20, 50, 100]
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
 
 export default function PromotionalBanners() {
-  const [sextaQty, setSextaQty] = useState(24)
-  const [tercaQty, setTercaQty] = useState(20)
+  const [raffles, setRaffles] = useState<Raffle[]>([])
+  const [loading, setLoading] = useState(true)
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    async function fetchRaffles() {
+      try {
+        const res = await fetch('/api/raffles')
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setRaffles(data)
+          const initial: Record<string, number> = {}
+          data.forEach((r: Raffle) => {
+            const min = (r.minPurchaseAmount && r.minPurchaseAmount > 0 && r.ticketPrice > 0)
+              ? Math.ceil(r.minPurchaseAmount / r.ticketPrice)
+              : 1
+            initial[r.id] = Math.max(10, min)
+          })
+          setQuantities(initial)
+        }
+      } catch (e) {
+        console.error('Error fetching raffles:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchRaffles()
+  }, [])
+
+  const getMinQuantity = (raffle: Raffle) => {
+    if (raffle.minPurchaseAmount && raffle.minPurchaseAmount > 0 && raffle.ticketPrice > 0) {
+      return Math.ceil(raffle.minPurchaseAmount / raffle.ticketPrice)
+    }
+    return 1
+  }
+
+  const setQuantity = (raffle: Raffle, qty: number) => {
+    const minQty = getMinQuantity(raffle)
+    setQuantities((prev) => ({ ...prev, [raffle.id]: Math.max(minQty, qty) }))
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
+        </div>
+      </div>
+    )
+  }
+
+  if (raffles.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8 sm:py-12">
+        <p className="text-center text-gray-500">Nenhuma rifa ativa no momento.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-12">
-      <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-        {/* Sexta da Alegria */}
-        <div className="bg-white border-2 border-gray-200 rounded-lg p-4 sm:p-6 shadow-lg">
-          <div className="text-center mb-4 sm:mb-6">
-            <div className="text-3xl sm:text-4xl mb-2">🎉</div>
-            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">Sexta da Alegria</h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Toda sexta-feira pontos que cabem no seu bolso</p>
-            <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-3 sm:mb-4">R$ 20.000</div>
-            <div className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">AS 21:00</div>
-          </div>
+      <div className="bg-green-700 text-white py-3 px-4 rounded-t-lg mb-0">
+        <h2 className="text-xl font-bold">prêmios</h2>
+      </div>
+      <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pt-6">
+        {raffles.map((raffle) => {
+          const minQty = getMinQuantity(raffle)
+          const qty = Math.max(minQty, quantities[raffle.id] ?? minQty)
+          const totalPrice = raffle.ticketPrice * qty
+          const buyHref = `/comprar?raffleId=${encodeURIComponent(raffle.id)}&quantity=${qty}`
 
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-            {[5, 10, 15, 40, 100, 200].map((qty) => (
-              <button
-                key={qty}
-                onClick={() => setSextaQty(qty)}
-                className={`py-1.5 sm:py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium transition-colors ${
-                  sextaQty === qty
-                    ? 'bg-yellow-400 text-black'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+          return (
+            <div
+              key={raffle.id}
+              className="bg-white border-2 border-gray-200 rounded-lg p-4 sm:p-6 shadow-lg text-gray-900"
+            >
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="text-3xl sm:text-4xl mb-2">🎉</div>
+                <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">{raffle.title}</h3>
+                <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 line-clamp-2">
+                  {raffle.description || 'Participe e concorra a prêmios.'}
+                </p>
+                <div className="text-2xl sm:text-3xl font-bold text-green-700 mb-3 sm:mb-4">
+                  {formatCurrency(raffle.prizeAmount)}
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                  {raffle.endDate
+                    ? `Até ${formatDate(raffle.endDate)}`
+                    : `A partir de ${formatDate(raffle.startDate)}`}
+                </div>
+                {raffle.minPurchaseAmount != null && raffle.minPurchaseAmount > 0 && (
+                  <p className="text-xs text-amber-700 font-medium mb-2">
+                    Valor mínimo de compra: {formatCurrency(raffle.minPurchaseAmount)}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                {QUICK_QUANTITIES.map((n) => {
+                  const effectiveQty = Math.max(n, minQty)
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setQuantity(raffle, effectiveQty)}
+                      className={`py-1.5 sm:py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium transition-colors ${
+                        qty === effectiveQty
+                          ? 'bg-yellow-400 text-black'
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
+                    >
+                      +{n}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
+                <button
+                  type="button"
+                  onClick={() => setQuantity(raffle, qty - 1)}
+                  className="bg-gray-200 text-gray-800 p-1.5 sm:p-2 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={qty <= minQty}
+                >
+                  <span className="text-lg sm:text-xl font-bold">−</span>
+                </button>
+                <span className="text-lg sm:text-xl font-bold min-w-[2rem] text-center text-black tabular-nums">
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity(raffle, qty + 1)}
+                  className="bg-gray-200 text-gray-800 p-1.5 sm:p-2 rounded hover:bg-gray-300"
+                >
+                  <span className="text-lg sm:text-xl font-bold">+</span>
+                </button>
+              </div>
+
+              <Link
+                href={buyHref}
+                className="block w-full bg-green-600 text-white py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-green-500 transition-colors text-center"
               >
-                +{qty}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
-            <button
-              onClick={() => setSextaQty(Math.max(1, sextaQty - 1))}
-              className="bg-gray-200 text-gray-700 p-1.5 sm:p-2 rounded hover:bg-gray-300"
-            >
-              <span className="text-lg sm:text-xl">-</span>
-            </button>
-            <span className="text-lg sm:text-xl font-bold">{sextaQty}</span>
-            <button
-              onClick={() => setSextaQty(sextaQty + 1)}
-              className="bg-gray-200 text-gray-700 p-1.5 sm:p-2 rounded hover:bg-gray-300"
-            >
-              <span className="text-lg sm:text-xl">+</span>
-            </button>
-          </div>
-
-          <button className="w-full bg-green-600 text-white py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-green-500 transition-colors">
-            COMPRAR - R$ 6,00
-          </button>
-        </div>
-
-        {/* Terça Premiada */}
-        <div className="bg-white border-2 border-gray-200 rounded-lg p-4 sm:p-6 shadow-lg">
-          <div className="text-center mb-4 sm:mb-6">
-            <div className="text-3xl sm:text-4xl mb-2">🏆</div>
-            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">Terça Premiada</h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Prêmios rápidos com chances que cabem no seu bolso</p>
-            <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-3 sm:mb-4">R$ 15.000</div>
-            <div className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">AS 21:00</div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-            {[10, 20, 30, 50, 80, 100].map((qty) => (
-              <button
-                key={qty}
-                onClick={() => setTercaQty(qty)}
-                className={`py-1.5 sm:py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium transition-colors ${
-                  tercaQty === qty
-                    ? 'bg-yellow-400 text-black'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                +{qty}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
-            <button
-              onClick={() => setTercaQty(Math.max(1, tercaQty - 1))}
-              className="bg-gray-200 text-gray-700 p-1.5 sm:p-2 rounded hover:bg-gray-300"
-            >
-              <span className="text-lg sm:text-xl">-</span>
-            </button>
-            <span className="text-lg sm:text-xl font-bold">{tercaQty}</span>
-            <button
-              onClick={() => setTercaQty(tercaQty + 1)}
-              className="bg-gray-200 text-gray-700 p-1.5 sm:p-2 rounded hover:bg-gray-300"
-            >
-              <span className="text-lg sm:text-xl">+</span>
-            </button>
-          </div>
-
-          <button className="w-full bg-green-600 text-white py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-green-500 transition-colors">
-            COMPRAR - R$ 4,00
-          </button>
-        </div>
+                COMPRAR – {formatCurrency(totalPrice)}
+              </Link>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
-

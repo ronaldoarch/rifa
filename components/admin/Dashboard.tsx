@@ -1,7 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { formatCurrency } from '@/lib/utils'
+
+const MetricsChart = dynamic(() => import('@/components/admin/MetricsChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white p-6 rounded-lg shadow h-80 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900" />
+    </div>
+  ),
+})
 
 interface Stats {
   totalUsers: number
@@ -89,6 +99,16 @@ export default function Dashboard() {
     <div>
       <h2 className="text-3xl font-bold mb-6 text-gray-900">Dashboard</h2>
       
+      {/* Gráfico de métricas */}
+      <div className="mb-8">
+        <MetricsChart
+          totalRevenue={stats.totalRevenue}
+          totalPayments={stats.totalPayments}
+          totalUsers={stats.totalUsers}
+          totalTickets={stats.totalTickets}
+        />
+      </div>
+
       {/* Cards de métricas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">

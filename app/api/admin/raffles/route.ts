@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { parseBrazilianNumber } from '@/lib/utils'
+
+function serializeRaffle(raffle: { totalTickets: bigint; soldTickets: bigint; [key: string]: unknown }) {
+  return {
+    ...raffle,
+    totalTickets: Number(raffle.totalTickets),
+    soldTickets: Number(raffle.soldTickets),
+  }
+}
 
 export async function GET() {
   try {
@@ -14,7 +23,7 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' },
     })
-    return NextResponse.json(raffles)
+    return NextResponse.json(raffles.map(serializeRaffle))
   } catch (error) {
     console.error('Error fetching raffles:', error)
     return NextResponse.json(
@@ -36,6 +45,7 @@ export async function POST(request: NextRequest) {
       endDate,
       totalTickets,
       ticketPrice,
+      minPurchaseAmount,
       imageUrl,
     } = body
 
@@ -46,25 +56,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const totalTicketsBig = BigInt(totalTickets && String(totalTickets).trim() !== '' ? String(totalTickets) : '0')
+
     const raffle = await prisma.raffle.create({
       data: {
         title,
         description: description || null,
-        prizeAmount: parseFloat(prizeAmount),
+        prizeAmount: parseBrazilianNumber(prizeAmount),
         status: status || 'active',
         startDate: new Date(startDate),
         endDate: endDate ? new Date(endDate) : null,
-        totalTickets: totalTickets ? parseInt(totalTickets) : 0,
-        ticketPrice: parseFloat(ticketPrice),
+        totalTickets: totalTicketsBig,
+        ticketPrice: parseBrazilianNumber(ticketPrice),
+        minPurchaseAmount: parseBrazilianNumber(minPurchaseAmount),
         imageUrl: imageUrl || null,
       },
     })
 
-    return NextResponse.json(raffle)
+    return NextResponse.json(serializeRaffle(raffle))
   } catch (error) {
     console.error('Error creating raffle:', error)
+    const message = error instanceof Error ? error.message : 'Erro ao criar rifa'
     return NextResponse.json(
-      { error: 'Erro ao criar rifa' },
+      { error: 'Erro ao criar rifa', details: message },
       { status: 500 }
     )
   }

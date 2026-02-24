@@ -6,14 +6,18 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
 export default function RegisterPage() {
+  const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
   const [formData, setFormData] = useState({
+    cpf: '',
     name: '',
     useSocialName: false,
     phone: '',
     email: '',
     password: '',
   })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -34,8 +38,50 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement registration logic
-    router.push('/comprar')
+    setError('')
+    setSubmitting(true)
+    const cpfClean = formData.cpf.replace(/\D/g, '')
+    if (cpfClean.length !== 11) {
+      setError('CPF deve ter 11 dígitos.')
+      setSubmitting(false)
+      return
+    }
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          cpf: cpfClean,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || undefined,
+          password: formData.password,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Erro ao criar conta')
+        setSubmitting(false)
+        return
+      }
+      const fromRaffleId = searchParams.get('raffleId')
+      const fromQuantity = searchParams.get('quantity')
+      if (fromRaffleId && fromQuantity) {
+        router.push(`/comprar?raffleId=${encodeURIComponent(fromRaffleId)}&quantity=${encodeURIComponent(fromQuantity)}`)
+        return
+      }
+      const principalRes = await fetch('/api/raffles/principal')
+      const principal = await principalRes.json()
+      if (principal?.id) {
+        router.push(`/comprar?raffleId=${encodeURIComponent(principal.id)}&quantity=10`)
+        return
+      }
+      router.push('/comprar')
+    } catch (_) {
+      setError('Erro de conexão. Tente de novo.')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -53,9 +99,34 @@ export default function RegisterPage() {
             Página {page} de 2
           </p>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             {page === 1 ? (
               <>
+                <div>
+                  <label htmlFor="cpf" className="block text-gray-700 font-bold mb-2">
+                    CPF *
+                  </label>
+                  <input
+                    type="text"
+                    id="cpf"
+                    value={formData.cpf}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 11)
+                      setFormData((prev) => ({ ...prev, cpf: v }))
+                    }}
+                    placeholder="Apenas números"
+                    className="w-full px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    11 dígitos, apenas números
+                  </p>
+                </div>
                 <div>
                   <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
                     Nome *
@@ -164,9 +235,10 @@ export default function RegisterPage() {
                   </button>
                   <button
                     type="submit"
-                    className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors flex items-center"
+                    disabled={submitting}
+                    className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors flex items-center disabled:opacity-50"
                   >
-                    Continuar para compra &gt;
+                    {submitting ? 'Cadastrando...' : 'Continuar para compra ›'}
                   </button>
                 </div>
               </>
