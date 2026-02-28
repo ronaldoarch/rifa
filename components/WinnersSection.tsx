@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 interface ShowcaseItem {
   id: string
@@ -91,9 +92,9 @@ export default function WinnersSection() {
         )}
 
         <div className="text-center mt-8">
-          <a href="/resultados" className="text-green-700 hover:text-green-800 font-semibold">
+          <Link href="/resultados" className="text-green-700 hover:text-green-800 font-semibold">
             ver mais →
-          </a>
+          </Link>
         </div>
       </div>
     </div>
