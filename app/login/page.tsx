@@ -90,6 +90,11 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 required
               />
+              <p className="mt-1 text-right">
+                <Link href="/esqueci-senha" className="text-sm text-yellow-600 hover:underline">
+                  Esqueci minha senha
+                </Link>
+              </p>
             </div>
 
             <button

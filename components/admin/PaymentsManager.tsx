@@ -31,6 +31,22 @@ export default function PaymentsManager() {
     totalPages: 0,
   })
 
+  const handleUpdateStatus = async (paymentId: string, status: string) => {
+    const msg = status === 'paid' ? 'Marcar este pagamento como pago?' : 'Estornar este pagamento?'
+    if (!confirm(msg)) return
+    try {
+      const res = await fetch(`/api/admin/payments/${paymentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (res.ok) fetchPayments()
+      else alert((await res.json()).error || 'Erro ao atualizar')
+    } catch {
+      alert('Erro ao atualizar pagamento')
+    }
+  }
+
   const fetchPayments = async () => {
     try {
       setLoading(true)
@@ -133,6 +149,24 @@ export default function PaymentsManager() {
                     >
                       {payment.status}
                     </span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {payment.status === 'pending' && (
+                        <button
+                          onClick={() => handleUpdateStatus(payment.id, 'paid')}
+                          className="text-xs text-green-600 hover:text-green-800 font-medium"
+                        >
+                          Marcar como pago
+                        </button>
+                      )}
+                      {payment.status === 'paid' && (
+                        <button
+                          onClick={() => handleUpdateStatus(payment.id, 'refunded')}
+                          className="text-xs text-amber-600 hover:text-amber-800 font-medium"
+                        >
+                          Estornar
+                        </button>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {payment.tickets.length}
