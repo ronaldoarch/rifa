@@ -109,7 +109,7 @@ const SettingsManager = dynamic(() => import('@/components/admin/SettingsManager
   ),
 })
 
-const GateboxCredentialsManager = dynamic(() => import('@/components/admin/GateboxCredentialsManager'), {
+const XGateCredentialsManager = dynamic(() => import('@/components/admin/XGateCredentialsManager'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-64">
@@ -151,7 +151,7 @@ export default function AdminPanel() {
     { id: 'users', label: 'Usuários', icon: Users },
     { id: 'payments', label: 'Pagamentos', icon: DollarSign },
     { id: 'affiliates', label: 'Afiliados', icon: BarChart3 },
-    { id: 'gatebox', label: 'Gatebox (PIX)', icon: Key },
+    { id: 'xgate', label: 'XGate (PIX)', icon: Key },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ]
 
@@ -246,9 +246,9 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {activeTab === 'gatebox' && (
+          {activeTab === 'xgate' && (
             <div>
-              <GateboxCredentialsManager />
+              <XGateCredentialsManager />
             </div>
           )}
 

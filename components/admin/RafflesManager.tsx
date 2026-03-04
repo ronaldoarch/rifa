@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, Ticket, Upload } from 'lucide-react'
+import { Plus, Edit, Trash2, Ticket, Upload, Trophy } from 'lucide-react'
 
 interface Raffle {
   id: string
@@ -40,6 +40,10 @@ export default function RafflesManager() {
     imageUrl: '',
   })
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [showResultadoModal, setShowResultadoModal] = useState(false)
+  const [resultadoRaffle, setResultadoRaffle] = useState<Raffle | null>(null)
+  const [winningNumberInput, setWinningNumberInput] = useState('')
+  const [submittingResultado, setSubmittingResultado] = useState(false)
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -116,6 +120,46 @@ export default function RafflesManager() {
     } catch (error) {
       console.error('Error deleting raffle:', error)
       alert('Erro ao deletar rifa')
+    }
+  }
+
+  const openResultadoModal = (raffle: Raffle) => {
+    setResultadoRaffle(raffle)
+    setWinningNumberInput('')
+    setShowResultadoModal(true)
+  }
+
+  const handleSubmitResultado = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resultadoRaffle) return
+    const num = winningNumberInput.replace(/\D/g, '').trim()
+    if (!num) {
+      alert('Informe o número vencedor (ex.: resultado da Loteria Federal)')
+      return
+    }
+    setSubmittingResultado(true)
+    try {
+      const res = await fetch(`/api/admin/raffles/${resultadoRaffle.id}/resultado`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winningNumber: num }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || 'Erro ao registrar resultado')
+        setSubmittingResultado(false)
+        return
+      }
+      alert(data.message + (data.winner ? ` Ganhador: ${data.winner.userName} (bilhete ${data.winner.ticketNumber}).` : ''))
+      setShowResultadoModal(false)
+      setResultadoRaffle(null)
+      setWinningNumberInput('')
+      fetchRaffles()
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao enviar resultado')
+    } finally {
+      setSubmittingResultado(false)
     }
   }
 
@@ -224,6 +268,15 @@ export default function RafflesManager() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {(raffle.status === 'active' || raffle.status === 'upcoming') && (
+                      <button
+                        onClick={() => openResultadoModal(raffle)}
+                        className="text-amber-600 hover:text-amber-800 mr-3"
+                        title="Informar resultado (Loteria Federal)"
+                      >
+                        <Trophy size={18} className="inline" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEdit(raffle)}
                       className="text-blue-600 hover:text-blue-900 mr-3"
@@ -465,6 +518,60 @@ export default function RafflesManager() {
                     resetForm()
                   }}
                   className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showResultadoModal && resultadoRaffle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-2 text-gray-900">
+              Resultado — Loteria Federal
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {resultadoRaffle.title}. Informe o número vencedor (5 ou 6 dígitos) do sorteio oficial.
+            </p>
+            <form onSubmit={handleSubmitResultado} className="space-y-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Número vencedor
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={winningNumberInput}
+                  onChange={(e) => setWinningNumberInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Ex.: 12345 ou 012345"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+                <p className="text-gray-500 text-xs mt-1">
+                  O sistema busca o bilhete com esse número, confirma o pagamento e encerra a rifa.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={submittingResultado}
+                  className="flex-1 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {submittingResultado ? 'Registrando...' : 'Registrar resultado'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResultadoModal(false)
+                    setResultadoRaffle(null)
+                    setWinningNumberInput('')
+                  }}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
                 >
                   Cancelar
                 </button>

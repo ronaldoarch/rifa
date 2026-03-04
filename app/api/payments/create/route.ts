@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createPixPayment } from '@/lib/gatebox'
+import { createPixPayment } from '@/lib/xgate'
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
         amount: totalAmount,
         status: paymentMethod === 'credits' ? 'paid' : 'pending',
         paymentMethod,
-        pixQrCode: paymentMethod === 'pix' ? null : null,
-        pixCopyPaste: paymentMethod === 'pix' ? null : null,
+        pixQrCode: null,
+        pixCopyPaste: null,
       },
     })
 
@@ -81,24 +81,22 @@ export async function POST(request: NextRequest) {
       })
       if (user) {
         const pix = await createPixPayment({
-          externalId: payment.id,
           amount: totalAmount,
           document: user.cpf,
           name: user.name,
           email: user.email ?? undefined,
           phone: user.phone ?? undefined,
-          description: `Rifa - ${quantity} bilhete(s)`,
         })
         if (pix) {
           await prisma.payment.update({
             where: { id: payment.id },
             data: {
               pixCopyPaste: pix.copyPaste,
-              pixQrCode: pix.qrCode ?? undefined,
+              transactionId: pix.transactionId,
             },
           })
           ;(payment as { pixCopyPaste?: string; pixQrCode?: string }).pixCopyPaste = pix.copyPaste
-          ;(payment as { pixQrCode?: string }).pixQrCode = pix.qrCode
+          ;(payment as { transactionId?: string }).transactionId = pix.transactionId
         }
       }
     }
