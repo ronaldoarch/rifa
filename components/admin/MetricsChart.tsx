@@ -98,8 +98,9 @@ export default function MetricsChart({
                 dataKey="display"
                 radius={[0, 8, 8, 0]}
                 maxBarSize={32}
-                label={({ x, y, width, height, value, payload }) =>
-                  value > 0.05 && payload ? (
+                label={(props: { x?: number; y?: number; width?: number; height?: number; value?: number; payload?: { value: number; format: string } }) => {
+                  const { x = 0, y = 0, width = 0, height = 0, value = 0, payload } = props
+                  return value > 0.05 && payload ? (
                     <text
                       x={x + width + 10}
                       y={y + height / 2}
@@ -111,7 +112,7 @@ export default function MetricsChart({
                       {formatValue(payload.value, payload.format)}
                     </text>
                   ) : null
-                }
+                }}
               >
                 {data.map((entry, index) => (
                   <Cell
