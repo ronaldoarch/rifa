@@ -1,9 +1,10 @@
 # Dockerfile otimizado para Coolify
-FROM node:20-alpine AS base
+# Debian Bullseye (11) tem libssl.so.1.1; Alpine/Bookworm usam OpenSSL 3 e quebram o engine do Prisma
+FROM node:20-bullseye-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy package files
@@ -38,8 +39,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates libssl1.1 && rm -rf /var/lib/apt/lists/*
 
 # Copy necessary files for standalone build
 # Note: standalone output includes server.js, node_modules, and .next in its root
