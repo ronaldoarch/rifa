@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Trash2, Gift } from 'lucide-react'
 
 interface PremiumNumber {
@@ -30,9 +30,24 @@ export default function PremiumNumbersManager() {
   const [formNumber, setFormNumber] = useState('')
   const [formPrize, setFormPrize] = useState('')
 
+  const fetchRaffles = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/raffles')
+      const data = await response.json()
+      setRaffles(Array.isArray(data) ? data : [])
+      if (data?.length) {
+        setSelectedRaffleId((prev) => (prev ? prev : data[0].id))
+      }
+    } catch (error) {
+      console.error('Error fetching raffles:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchRaffles()
-  }, [])
+  }, [fetchRaffles])
 
   useEffect(() => {
     if (selectedRaffleId) {
@@ -41,21 +56,6 @@ export default function PremiumNumbersManager() {
       setPremiumNumbers([])
     }
   }, [selectedRaffleId])
-
-  const fetchRaffles = async () => {
-    try {
-      const response = await fetch('/api/admin/raffles')
-      const data = await response.json()
-      setRaffles(Array.isArray(data) ? data : [])
-      if (data?.length && !selectedRaffleId) {
-        setSelectedRaffleId(data[0].id)
-      }
-    } catch (error) {
-      console.error('Error fetching raffles:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const fetchPremiumNumbers = async (raffleId: string) => {
     try {

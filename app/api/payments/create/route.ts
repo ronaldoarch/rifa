@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       tickets.push(ticket)
 
       // Bilhete premiado: verifica se este número tem prêmio e premia na hora
-      const premium = await (prisma as any).premiumNumber.findUnique({
+      const premium = await prisma.premiumNumber.findUnique({
         where: {
           raffleId_number: { raffleId, number: String(seq) },
         },

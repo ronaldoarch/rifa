@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams()
   const [cpf, setCpf] = useState('')
   const [password, setPassword] = useState('')
@@ -120,6 +120,22 @@ export default function LoginPage() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md text-center text-gray-500">Carregando...</div>
+        </main>
+        <Footer />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
 

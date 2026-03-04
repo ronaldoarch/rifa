@@ -68,7 +68,7 @@ export default function HeroBanner() {
     if (minQty > 1 && quantity < minQty) {
       setQuantity(minQty)
     }
-  }, [principalRaffle])
+  }, [principalRaffle, quantity])
 
   return (
     <div className="relative bg-gradient-to-b from-green-900 to-green-800 py-16 overflow-hidden">

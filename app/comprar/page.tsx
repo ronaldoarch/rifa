@@ -200,6 +200,7 @@ function PurchaseContent() {
                   <h3 className="text-xl font-bold mb-4 text-gray-900">Escaneie o QR Code</h3>
                   {pixQrCode ? (
                     <div className="bg-white p-4 rounded-lg mb-4 inline-block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={pixQrCode}
                         alt="QR Code PIX"

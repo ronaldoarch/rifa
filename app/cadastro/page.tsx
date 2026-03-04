@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
   const [formData, setFormData] = useState({
@@ -248,6 +248,22 @@ export default function RegisterPage() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md text-center text-gray-500">Carregando...</div>
+        </main>
+        <Footer />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   )
 }
 

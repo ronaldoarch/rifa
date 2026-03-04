@@ -143,11 +143,13 @@ export async function createPixPayment(params: {
     expire: 3600,
   })
   if (!result) return null
-  const copyPaste = result.brCode ?? result.copyPaste ?? result.emv ?? ''
-  const qrCode = result.qrCode ?? result.qrCodeBase64
+  const copyPasteRaw = result.brCode ?? result.copyPaste ?? result.emv ?? ''
+  const copyPaste = typeof copyPasteRaw === 'string' ? copyPasteRaw : ''
+  const qrCodeRaw = result.qrCode ?? result.qrCodeBase64
+  const qrCode = typeof qrCodeRaw === 'string' ? qrCodeRaw : undefined
   if (!copyPaste) {
     console.error('Gatebox: resposta sem brCode/copyPaste')
     return null
   }
-  return { copyPaste, qrCode: typeof qrCode === 'string' ? qrCode : undefined }
+  return qrCode !== undefined ? { copyPaste, qrCode } : { copyPaste }
 }
