@@ -57,13 +57,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, message: 'Já estava pago' })
     }
 
+    const updateData: { status: 'paid'; transactionId?: string } = { status: 'paid' }
+    if (body.transactionId != null && body.transactionId !== '') {
+      updateData.transactionId = String(body.transactionId)
+    } else if (body.endToEnd != null && body.endToEnd !== '') {
+      updateData.transactionId = String(body.endToEnd)
+    }
     await prisma.payment.update({
       where: { id: payment.id },
-      data: {
-        status: 'paid',
-        ...(body.transactionId && { transactionId: String(body.transactionId) }),
-        ...(body.endToEnd && { transactionId: String(body.endToEnd) }),
-      },
+      data: updateData,
     })
 
     return NextResponse.json({ ok: true, status: 'paid' })
