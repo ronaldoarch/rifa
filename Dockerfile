@@ -66,5 +66,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Na subida: aplica o schema no banco (DATABASE_URL) e inicia o servidor
-CMD ["sh", "-c", "npx prisma db push && exec node server.js"]
+CMD ["sh", "-c", "node ./node_modules/prisma/build/index.js db push && exec node server.js"]
 
