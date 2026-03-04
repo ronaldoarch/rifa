@@ -26,7 +26,7 @@ export default function PurchaseBox({ quantity, setQuantity, principalRaffle }: 
   const price = ticketPrice * effectiveQty
 
   const quantityOptions = [3, 10, 15, 20, 30].map((n) => Math.max(n, minQty))
-  const uniqueOptions = [...new Set(quantityOptions)]
+  const uniqueOptions = Array.from(new Set(quantityOptions))
 
   const handlePurchase = () => {
     const params = new URLSearchParams()
