@@ -130,9 +130,9 @@ function PurchaseContent() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-12">
+      <main className="flex-grow container mx-auto px-4 py-8 sm:py-12">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Finalizar Compra</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Finalizar Compra</h1>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Left side - Purchase details */}

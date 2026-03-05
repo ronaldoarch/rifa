@@ -12,16 +12,16 @@ export default function TermosPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-grow">
-        <div className="bg-yellow-400 py-8">
+        <div className="bg-yellow-400 py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <Link href="/sobre" className="text-gray-800/70 hover:text-gray-800 text-sm mb-2 inline-block">
               ← Voltar ao Sobre
             </Link>
-            <h1 className="text-4xl font-bold text-gray-800">Termos de uso</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-800">Termos de uso</h1>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8 sm:py-12">
           <div className="max-w-3xl mx-auto prose prose-gray">
             <p className="text-gray-600 mb-6">
               Leia atentamente os termos e condições de uso da plataforma antes de realizar compras ou cadastros.

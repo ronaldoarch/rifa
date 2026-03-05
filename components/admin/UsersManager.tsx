@@ -60,7 +60,7 @@ export default function UsersManager() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Usuários</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Usuários</h2>
         <div className="flex items-center space-x-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />

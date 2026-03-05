@@ -44,16 +44,16 @@ export default function RaffleResultsPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-grow">
-        <div className="bg-yellow-400 py-8">
+        <div className="bg-yellow-400 py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <Link href="/resultados" className="text-black/70 hover:text-black text-sm mb-2 inline-block">
               ← Voltar aos resultados
             </Link>
-            <h1 className="text-4xl font-bold text-black">Resultados</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-black">Resultados</h1>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8 sm:py-12">
           {loading ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500" />

@@ -85,9 +85,9 @@ export default function PerfilPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-12">
+      <main className="flex-grow container mx-auto px-4 py-8 sm:py-12">
         <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">Meu perfil</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">Meu perfil</h1>
           <div className="bg-gray-50 rounded-lg p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center">

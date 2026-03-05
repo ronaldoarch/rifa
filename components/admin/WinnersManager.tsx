@@ -149,7 +149,7 @@ export default function WinnersManager() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Gerenciar Ganhadores</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Gerenciar Ganhadores</h2>
         <button
           onClick={() => {
             resetForm()

@@ -87,9 +87,9 @@ function RegisterForm() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <main className="flex-grow flex items-center justify-center px-4 py-12">
+      <main className="flex-grow flex items-center justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4 text-center">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">
             É sua primeira vez por aqui!
           </h1>
           <p className="text-gray-600 mb-2 text-center">
@@ -256,7 +256,7 @@ export default function RegisterPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-white flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center px-4 py-12">
+        <main className="flex-grow flex items-center justify-center px-4 py-8 sm:py-12">
           <div className="w-full max-w-md text-center text-gray-500">Carregando...</div>
         </main>
         <Footer />

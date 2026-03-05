@@ -41,9 +41,9 @@ export default function EsqueciSenhaPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <main className="flex-grow flex items-center justify-center px-4 py-12">
+      <main className="flex-grow flex items-center justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 text-center">
             Esqueci minha senha
           </h1>
           <p className="text-gray-600 mb-6 text-center">

@@ -8,6 +8,9 @@ import ThemeInjector from '@/components/ThemeInjector'
 const inter = Inter({ subsets: ['latin'] })
 
 export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
   themeColor: '#FFD700',
 }
 

@@ -33,13 +33,13 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-grow">
-        <div className="bg-yellow-400 py-8">
+        <div className="bg-yellow-400 py-6 sm:py-8">
           <div className="container mx-auto px-4">
-            <h1 className="text-4xl font-bold text-black">Resultados</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-black">Resultados</h1>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8 sm:py-12">
           <p className="text-gray-700 mb-8">
             Selecione uma rifa abaixo para visualizar os resultados dos sorteios.
           </p>
@@ -60,7 +60,7 @@ export default function ResultsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 bg-yellow-100 rounded-lg flex items-center justify-center text-3xl">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-100 rounded-lg flex items-center justify-center text-2xl sm:text-3xl">
                         🎯
                       </div>
                       <div>

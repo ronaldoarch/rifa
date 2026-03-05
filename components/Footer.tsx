@@ -32,13 +32,28 @@ export default function Footer() {
           <div>
             <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">{platformName}</h3>
             <div className="flex space-x-4 mb-4 sm:mb-6">
-              <a href="#" className="hover:text-yellow-400 transition-colors">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="hover:text-yellow-400 transition-colors"
+                aria-label="Instagram (em breve)"
+              >
                 <Instagram size={20} className="sm:w-6 sm:h-6" />
               </a>
-              <a href="#" className="hover:text-yellow-400 transition-colors">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="hover:text-yellow-400 transition-colors"
+                aria-label="Facebook (em breve)"
+              >
                 <Facebook size={20} className="sm:w-6 sm:h-6" />
               </a>
-              <a href="#" className="hover:text-yellow-400 transition-colors">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="hover:text-yellow-400 transition-colors"
+                aria-label="YouTube (em breve)"
+              >
                 <Youtube size={20} className="sm:w-6 sm:h-6" />
               </a>
             </div>

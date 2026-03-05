@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User } from 'lucide-react'
+import { User, Menu, X } from 'lucide-react'
 
 export default function Header() {
   const pathname = usePathname()
   const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => setMenuOpen(false), [pathname])
 
   useEffect(() => {
     fetch('/api/site-config')
@@ -73,18 +76,40 @@ export default function Header() {
               ))}
             </nav>
 
-            {/* Mobile Menu Button - TODO: Add mobile menu */}
-            <button className="lg:hidden text-black">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            {/* Mobile: botão menu + usuário */}
+            <div className="lg:hidden flex items-center gap-2">
+              {user ? (
+                <Link
+                  href="/perfil"
+                  className="p-2 rounded-lg hover:bg-black/10 text-black"
+                  aria-label="Perfil"
+                >
+                  <User size={22} />
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="text-sm font-medium bg-black text-white px-3 py-2 rounded-lg hover:bg-gray-800"
+                >
+                  Entrar
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => setMenuOpen((o) => !o)}
+                className="p-2 rounded-lg hover:bg-black/10 text-black"
+                aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+                aria-expanded={menuOpen}
+              >
+                {menuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
 
-            {/* User Button */}
+            {/* Desktop: User Button */}
             {user ? (
               <Link
                 href="/perfil"
-                className="hidden sm:flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
+                className="hidden lg:flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
               >
                 <User size={18} className="sm:w-5 sm:h-5" />
                 <span className="hidden md:inline truncate max-w-[140px]">{user.name}</span>
@@ -92,13 +117,31 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="hidden sm:flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
+                className="hidden lg:flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
               >
                 <User size={18} className="sm:w-5 sm:h-5" />
                 <span className="hidden md:inline">entre ou cadastre-se</span>
               </Link>
             )}
           </div>
+
+          {/* Mobile menu dropdown */}
+          {menuOpen && (
+            <nav className="lg:hidden border-t border-black/10 py-3 flex flex-col gap-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={`px-2 py-2.5 rounded-lg text-black font-medium hover:bg-black/10 ${
+                    pathname === item.href ? 'bg-black/10' : ''
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          )}
         </div>
       </header>
     </>

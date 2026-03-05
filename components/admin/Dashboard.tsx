@@ -97,7 +97,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold mb-6 text-gray-900">Dashboard</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-gray-900">Dashboard</h2>
       
       {/* Gráfico de métricas */}
       <div className="mb-8">
@@ -113,19 +113,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Total de Usuários</h3>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Arrecadação Total</h3>
-          <p className="text-3xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Rifas Ativas</h3>
-          <p className="text-3xl font-bold text-gray-900">{stats.activeRaffles}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.activeRaffles}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Tickets Vendidos</h3>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalTickets}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalTickets}</p>
         </div>
       </div>
 
@@ -133,19 +133,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Total de Rifas</h3>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalRaffles}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalRaffles}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Pagamentos</h3>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalPayments}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalPayments}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Ganhadores</h3>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalWinners}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalWinners}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 mb-2">Afiliados Ativos</h3>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalAffiliates}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalAffiliates}</p>
         </div>
       </div>
 

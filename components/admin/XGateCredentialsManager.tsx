@@ -62,7 +62,7 @@ export default function XGateCredentialsManager() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
           <Key size={32} />
           XGate (Gateway PIX)
         </h2>

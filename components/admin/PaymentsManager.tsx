@@ -76,7 +76,7 @@ export default function PaymentsManager() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Pagamentos</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Pagamentos</h2>
         <div className="flex items-center space-x-2">
           <select
             value={statusFilter}

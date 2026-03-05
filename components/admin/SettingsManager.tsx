@@ -131,7 +131,7 @@ export default function SettingsManager() {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold mb-6 text-gray-900">Configurações</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-gray-900">Configurações</h2>
       <div className="bg-white p-6 rounded-lg shadow space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

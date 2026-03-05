@@ -35,16 +35,16 @@ export default function FAQPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-grow">
-        <div className="bg-yellow-400 py-8">
+        <div className="bg-yellow-400 py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <Link href="/sobre" className="text-gray-800/70 hover:text-gray-800 text-sm mb-2 inline-block">
               ← Voltar ao Sobre
             </Link>
-            <h1 className="text-4xl font-bold text-gray-800">Perguntas frequentes</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-800">Perguntas frequentes</h1>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8 sm:py-12">
           <div className="max-w-3xl mx-auto">
             <p className="text-gray-600 mb-8">
               Encontre respostas para as dúvidas mais comuns sobre nossa plataforma.

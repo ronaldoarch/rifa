@@ -13,7 +13,9 @@ import {
   Tag,
   Video,
   Award,
-  Key
+  Key,
+  Menu,
+  X
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/admin/ErrorBoundary'
@@ -130,6 +132,7 @@ const ShowcaseManager = dynamic(() => import('@/components/admin/ShowcaseManager
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/config')
@@ -155,15 +158,62 @@ export default function AdminPanel() {
     { id: 'settings', label: 'Configurações', icon: Settings },
   ]
 
+  const closeSidebar = () => setSidebarOpen(false)
+  const selectTab = (id: string) => {
+    setActiveTab(id)
+    setSidebarOpen(false)
+  }
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-100">
         <div className="flex">
-        {/* Sidebar */}
-        <aside className="hidden md:block w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0">
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">{platformName}</h1>
-            <p className="text-gray-400 text-sm mt-2">Painel Administrativo</p>
+        {/* Top bar mobile: hamburger para abrir menu */}
+        <div className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-gray-800 text-white flex items-center justify-between px-4 shadow">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-700"
+            aria-label="Abrir menu"
+          >
+            <Menu size={24} />
+          </button>
+          <span className="font-bold truncate max-w-[180px]">{platformName}</span>
+          <div className="w-10" />
+        </div>
+
+        {/* Backdrop mobile: fecha o drawer ao clicar fora */}
+        {sidebarOpen && (
+          <button
+            type="button"
+            className="md:hidden fixed inset-0 bg-black/50 z-40"
+            onClick={closeSidebar}
+            aria-label="Fechar menu"
+          />
+        )}
+
+        {/* Sidebar: drawer no mobile, fixo no desktop */}
+        <aside
+          className={`
+            w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0 z-50
+            transform transition-transform duration-200 ease-out
+            md:translate-x-0 md:block
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          `}
+        >
+          <div className="p-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">{platformName}</h1>
+              <p className="text-gray-400 text-sm mt-2">Painel Administrativo</p>
+            </div>
+            <button
+              type="button"
+              onClick={closeSidebar}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-700"
+              aria-label="Fechar menu"
+            >
+              <X size={24} />
+            </button>
           </div>
           <nav className="mt-8">
             {menuItems.map((item) => {
@@ -171,7 +221,7 @@ export default function AdminPanel() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => selectTab(item.id)}
                   className={`w-full flex items-center space-x-3 px-6 py-3 hover:bg-gray-700 transition-colors ${
                     activeTab === item.id ? 'bg-gray-700 border-l-4 border-yellow-400' : ''
                   }`}
@@ -185,7 +235,7 @@ export default function AdminPanel() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 md:ml-64 p-4 sm:p-6 md:p-8 text-gray-900">
+        <main className="flex-1 md:ml-64 pt-14 md:pt-0 p-4 sm:p-6 md:p-8 text-gray-900 min-w-0 overflow-x-auto">
           {activeTab === 'dashboard' && (
             <div>
               <Dashboard />

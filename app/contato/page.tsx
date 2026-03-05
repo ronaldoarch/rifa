@@ -6,13 +6,13 @@ export default function ContactPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-grow">
-        <div className="bg-yellow-400 py-8">
+        <div className="bg-yellow-400 py-6 sm:py-8">
           <div className="container mx-auto px-4">
-            <h1 className="text-4xl font-bold text-gray-800">Contato</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-800">Contato</h1>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8 sm:py-12">
           <div className="max-w-md mx-auto text-center">
             <p className="text-gray-700 mb-8">
               Clique no botão abaixo para entrar em contato com nosso suporte
