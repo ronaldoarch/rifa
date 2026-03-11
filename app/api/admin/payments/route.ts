@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '20', 10) || 20))
     const statusParam = searchParams.get('status')
-    const ALLOWED_STATUSES = ['pending', 'paid', 'failed', 'refunded'] as const
-    const status = statusParam && ALLOWED_STATUSES.includes(statusParam as string)
+    const ALLOWED_STATUSES: readonly string[] = ['pending', 'paid', 'failed', 'refunded']
+    const status = statusParam && ALLOWED_STATUSES.includes(statusParam)
       ? statusParam
       : undefined
 
