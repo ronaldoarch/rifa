@@ -26,8 +26,18 @@ export async function GET(request: NextRequest) {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        omit: { password: true },
-        include: {
+        select: {
+          id: true,
+          cpf: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          credits: true,
+          affiliateId: true,
+          referredBy: true,
+          createdAt: true,
+          updatedAt: true,
           _count: {
             select: {
               tickets: true,
