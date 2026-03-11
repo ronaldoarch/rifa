@@ -1,20 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createPixPayment } from '@/lib/xgate'
+import { rateLimit } from '@/lib/rate-limit'
+import { requireSession } from '@/lib/auth-session'
+
+const MAX_QUANTITY = 500
 
 export async function POST(request: NextRequest) {
+  const limit = rateLimit('payment-create', request, 10, 60_000)
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Aguarde um momento.' },
+      { status: 429, headers: { 'Retry-After': String(limit.resetIn) } }
+    )
+  }
+
+  const sessionResult = await requireSession(request)
+  if ('error' in sessionResult) return sessionResult.error
+  const { user: sessionUser } = sessionResult
+
   try {
     const body = await request.json()
-    const { userId, raffleId, quantity, paymentMethod } = body
+    const { raffleId, quantity: qtyRaw, paymentMethod } = body
 
-    if (!userId || !raffleId || !quantity) {
+    if (!raffleId || qtyRaw == null) {
       return NextResponse.json(
         { error: 'Dados inválidos' },
         { status: 400 }
       )
     }
 
-    // Get raffle
+    // Validação de quantity: inteiro positivo, limite máximo, não excede disponíveis
+    const quantity = Math.floor(Number(qtyRaw))
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return NextResponse.json(
+        { error: 'Quantidade deve ser um número inteiro positivo' },
+        { status: 400 }
+      )
+    }
+    if (quantity > MAX_QUANTITY) {
+      return NextResponse.json(
+        { error: `Quantidade máxima por compra é ${MAX_QUANTITY}` },
+        { status: 400 }
+      )
+    }
+
+    const paymentMethodVal = paymentMethod === 'credits' ? 'credits' : 'pix'
+
     const raffle = await prisma.raffle.findUnique({
       where: { id: raffleId },
     })
@@ -26,8 +58,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const totalAmount = raffle.ticketPrice * quantity
-
+    const totalAmount = Number(raffle.ticketPrice) * quantity
     const minPurchase = Number((raffle as { minPurchaseAmount?: number }).minPurchaseAmount ?? 0)
     if (minPurchase > 0 && totalAmount < minPurchase) {
       return NextResponse.json(
@@ -38,130 +69,127 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if using credits
-    if (paymentMethod === 'credits') {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      })
+    const { payment, tickets } = await prisma.$transaction(async (tx) => {
+      // Lock raffle para evitar race condition. Requer PostgreSQL (FOR UPDATE não existe em SQLite).
+      const [locked] = await tx.$queryRaw<{ id: string; soldTickets: bigint; totalTickets: bigint }[]>`
+        SELECT id, "soldTickets", "totalTickets" FROM "Raffle" WHERE id = ${raffleId} FOR UPDATE
+      `
+      if (!locked) {
+        throw new Error('Rifa não encontrada')
+      }
 
-      if (!user || user.credits < totalAmount) {
-        return NextResponse.json(
-          { error: 'Créditos insuficientes' },
-          { status: 400 }
+      const currentSold = Number(locked.soldTickets)
+      const totalTickets = Number(locked.totalTickets)
+      const available = totalTickets - currentSold
+
+      if (quantity > available) {
+        throw new Error(
+          `Apenas ${available} ticket(s) disponível(is). Reduza a quantidade.`
         )
       }
 
-      // Deduct credits
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          credits: {
-            decrement: totalAmount,
-          },
-        },
-      })
-    }
-
-    // Create payment
-    const payment = await prisma.payment.create({
-      data: {
-        userId,
-        amount: totalAmount,
-        status: paymentMethod === 'credits' ? 'paid' : 'pending',
-        paymentMethod,
-        pixQrCode: null,
-        pixCopyPaste: null,
-      },
-    })
-
-    if (paymentMethod === 'pix') {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { cpf: true, name: true, email: true, phone: true },
-      })
-      if (user) {
-        const pix = await createPixPayment({
-          amount: totalAmount,
-          document: user.cpf,
-          name: user.name,
-          email: user.email ?? undefined,
-          phone: user.phone ?? undefined,
-        })
-        if (pix) {
-          await prisma.payment.update({
-            where: { id: payment.id },
-            data: {
-              pixCopyPaste: pix.copyPaste,
-              transactionId: pix.transactionId,
-            },
-          })
-          ;(payment as { pixCopyPaste?: string; pixQrCode?: string }).pixCopyPaste = pix.copyPaste
-          ;(payment as { transactionId?: string }).transactionId = pix.transactionId
+      // Créditos: decremento atômico com verificação (evita TOCTOU)
+      if (paymentMethodVal === 'credits') {
+        const updated = await tx.$queryRaw<{ id: string }[]>`
+          UPDATE "User"
+          SET credits = credits - ${totalAmount}
+          WHERE id = ${sessionUser.id} AND credits >= ${totalAmount}
+          RETURNING id
+        `
+        if (updated.length === 0) {
+          throw new Error('Créditos insuficientes')
         }
       }
-    }
 
-    const currentSold = Number(raffle.soldTickets)
-    const tickets = []
-
-    for (let i = 0; i < quantity; i++) {
-      const seq = currentSold + i + 1
-      const ticketNumber = `${raffleId}-${String(seq).padStart(6, '0')}`
-      const ticket = await prisma.ticket.create({
+      const payment = await tx.payment.create({
         data: {
-          userId,
-          raffleId,
-          number: ticketNumber,
-          paymentId: payment.id,
+          userId: sessionUser.id,
+          amount: totalAmount,
+          status: paymentMethodVal === 'credits' ? 'paid' : 'pending',
+          paymentMethod: paymentMethodVal,
+          pixQrCode: null,
+          pixCopyPaste: null,
         },
       })
-      tickets.push(ticket)
 
-      // Bilhete premiado: verifica se este número tem prêmio e premia na hora
-      const premium = await prisma.premiumNumber.findUnique({
-        where: {
-          raffleId_number: { raffleId, number: String(seq) },
-        },
-      })
-      if (premium && premium.prizeAmount > 0) {
-        await prisma.$transaction([
-          prisma.winner.create({
+      const tickets: Awaited<ReturnType<typeof tx.ticket.create>>[] = []
+      for (let i = 0; i < quantity; i++) {
+        const seq = currentSold + i + 1
+        const ticketNumber = `${raffleId}-${String(seq).padStart(6, '0')}`
+        const ticket = await tx.ticket.create({
+          data: {
+            userId: sessionUser.id,
+            raffleId,
+            number: ticketNumber,
+            paymentId: payment.id,
+          },
+        })
+        tickets.push(ticket)
+
+        const premium = await tx.premiumNumber.findUnique({
+          where: {
+            raffleId_number: { raffleId, number: String(seq) },
+          },
+        })
+        if (premium && premium.prizeAmount > 0) {
+          await tx.winner.create({
             data: {
-              userId,
+              userId: sessionUser.id,
               raffleId,
               ticketId: ticket.id,
               prizeAmount: premium.prizeAmount,
             },
-          }),
-          prisma.user.update({
-            where: { id: userId },
-            data: {
-              credits: { increment: premium.prizeAmount },
-            },
-          }),
-        ])
+          })
+          await tx.user.update({
+            where: { id: sessionUser.id },
+            data: { credits: { increment: premium.prizeAmount } },
+          })
+        }
+      }
+
+      await tx.raffle.update({
+        where: { id: raffleId },
+        data: { soldTickets: { increment: quantity } },
+      })
+
+      return { payment, tickets }
+    })
+
+    // PIX: chamada externa fora da transação
+    if (paymentMethodVal === 'pix') {
+      const pix = await createPixPayment({
+        amount: totalAmount,
+        document: sessionUser.cpf,
+        name: sessionUser.name,
+        email: sessionUser.email ?? undefined,
+        phone: sessionUser.phone ?? undefined,
+      })
+      if (pix) {
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            pixCopyPaste: pix.copyPaste,
+            transactionId: pix.transactionId,
+          },
+        })
+        ;(payment as { pixCopyPaste?: string; pixQrCode?: string }).pixCopyPaste = pix.copyPaste
+        ;(payment as { transactionId?: string }).transactionId = pix.transactionId
       }
     }
-
-    await prisma.raffle.update({
-      where: { id: raffleId },
-      data: {
-        soldTickets: {
-          increment: quantity,
-        },
-      },
-    })
 
     return NextResponse.json({
       payment,
       tickets,
     })
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao processar pagamento'
+    const status =
+      message.includes('não encontrada') ? 404 :
+      message.includes('insuficientes') || message.includes('disponível') ? 400 : 500
     console.error('Payment creation error:', error)
     return NextResponse.json(
-      { error: 'Erro ao processar pagamento' },
-      { status: 500 }
+      { error: message },
+      { status }
     )
   }
 }
-

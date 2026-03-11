@@ -96,13 +96,18 @@ function PurchaseContent() {
       const response = await fetch('/api/payments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          userId: userId || 'temp-user-id',
           raffleId: raffleId,
           quantity,
           paymentMethod: 'pix',
         }),
       })
+
+      if (response.status === 401) {
+        router.push('/login?redirect=' + encodeURIComponent('/comprar?raffleId=' + raffleId + '&quantity=' + quantity))
+        return
+      }
 
       if (response.ok) {
         const data = await response.json()

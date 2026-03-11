@@ -37,7 +37,7 @@ function LoginForm() {
         setSubmitting(false)
         return
       }
-      const next = searchParams.get('next') || '/comprar'
+      const next = searchParams.get('redirect') || searchParams.get('next') || '/comprar'
       router.push(next)
     } catch (_) {
       setError('Erro de conexão. Tente de novo.')

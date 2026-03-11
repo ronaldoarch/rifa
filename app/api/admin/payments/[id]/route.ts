@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-admin'
 
 /** Atualiza status do pagamento (marcar como pago, estornar, etc.). */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const { id } = await params
     const body = await request.json()

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Eye } from 'lucide-react'
+import { Search, Shield, ShieldOff } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 interface User {
@@ -10,6 +10,7 @@ interface User {
   email: string
   cpf: string
   phone: string | null
+  role?: string
   credits: number
   createdAt: string
   _count: {
@@ -45,6 +46,26 @@ export default function UsersManager() {
       console.error('Error fetching users:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const updateRole = async (userId: string, role: 'user' | 'admin') => {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      })
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role } : u))
+        )
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || 'Erro ao atualizar')
+      }
+    } catch {
+      alert('Erro ao atualizar role')
     }
   }
 
@@ -103,6 +124,9 @@ export default function UsersManager() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Afiliado
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Role
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -130,11 +154,33 @@ export default function UsersManager() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {user.affiliate?.name || '-'}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${user.role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {user.role === 'admin' ? 'Admin' : 'Usuário'}
+                    </span>
+                    {user.role !== 'admin' ? (
+                      <button
+                        onClick={() => updateRole(user.id, 'admin')}
+                        title="Promover a admin"
+                        className="ml-2 p-1 text-amber-600 hover:bg-amber-50 rounded"
+                      >
+                        <Shield size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => updateRole(user.id, 'user')}
+                        title="Reverter para usuário"
+                        className="ml-2 p-1 text-gray-500 hover:bg-gray-100 rounded"
+                      >
+                        <ShieldOff size={16} />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                   Nenhum usuário encontrado
                 </td>
               </tr>

@@ -135,10 +135,26 @@ export default function AdminPanel() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    fetch('/api/admin/config')
+    // Checar role antes de carregar o painel — evita flash da UI para role=user
+    fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
-        if (data.PLATFORM_NAME) setPlatformName(data.PLATFORM_NAME)
+        if (!data?.user || data.user.role !== 'admin') {
+          window.location.href = '/login?redirect=' + encodeURIComponent('/admin')
+          return
+        }
+        return fetch('/api/admin/config', { credentials: 'include' })
+      })
+      .then((res) => {
+        if (!res) return null
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = '/login?redirect=' + encodeURIComponent('/admin')
+          return null
+        }
+        return res.json()
+      })
+      .then((data) => {
+        if (data && data.PLATFORM_NAME) setPlatformName(data.PLATFORM_NAME)
       })
       .catch(() => {})
   }, [])

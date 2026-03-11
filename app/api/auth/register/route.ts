@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const limit = rateLimit('register', request, 3, 60_000)
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas de cadastro. Tente novamente em 1 minuto.' },
+      { status: 429, headers: { 'Retry-After': String(limit.resetIn) } }
+    )
+  }
   try {
     const body = await request.json()
-    const { cpf, name, email, phone, password } = body
+    const { cpf: cpfRaw, name, email, phone, password } = body
+
+    const cpf = String(cpfRaw ?? '').replace(/\D/g, '')
+    if (!cpf || cpf.length !== 11) {
+      return NextResponse.json(
+        { error: 'CPF inválido' },
+        { status: 400 }
+      )
+    }
 
     // Validate required fields
-    if (!cpf || !name || !email || !password) {
+    if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'Campos obrigatórios faltando' },
         { status: 400 }
@@ -62,7 +78,6 @@ export async function POST(request: NextRequest) {
           name: user.name,
           email: user.email,
         },
-        token,
       },
       { headers: { 'Set-Cookie': cookie } }
     )

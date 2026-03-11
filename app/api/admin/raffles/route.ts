@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parseBrazilianNumber } from '@/lib/utils'
+import { requireAdmin } from '@/lib/auth-admin'
 
 function serializeRaffle(raffle: { totalTickets: bigint; soldTickets: bigint; [key: string]: unknown }) {
   return {
@@ -10,7 +11,9 @@ function serializeRaffle(raffle: { totalTickets: bigint; soldTickets: bigint; [k
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const raffles = await prisma.raffle.findMany({
       include: {
@@ -34,6 +37,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const body = await request.json()
     const {

@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const limit = rateLimit('login', request, 5, 60_000)
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em 1 minuto.' },
+      { status: 429, headers: { 'Retry-After': String(limit.resetIn) } }
+    )
+  }
   try {
     const body = await request.json()
     const { cpf: cpfRaw, password } = body

@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { rateLimit } from '@/lib/rate-limit'
 
 /** Gera token de redefinição e envia link por e-mail (ou retorna link em dev). */
 export async function POST(request: NextRequest) {
+  const limit = rateLimit('forgot-password', request, 3, 60_000)
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em 1 minuto.' },
+      { status: 429, headers: { 'Retry-After': String(limit.resetIn) } }
+    )
+  }
   try {
     const body = await request.json()
     const email = (body.email ?? '').toString().trim().toLowerCase()
@@ -27,16 +35,18 @@ export async function POST(request: NextRequest) {
     const token = crypto.randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hora
 
-    await prisma.passwordReset.deleteMany({
-      where: { userId: user.id },
-    })
-    await prisma.passwordReset.create({
-      data: {
-        userId: user.id,
-        token,
-        expiresAt,
-      },
-    })
+    await prisma.$transaction([
+      prisma.passwordReset.deleteMany({
+        where: { userId: user.id },
+      }),
+      prisma.passwordReset.create({
+        data: {
+          userId: user.id,
+          token,
+          expiresAt,
+        },
+      }),
+    ])
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
     const resetLink = `${baseUrl}/redefinir-senha?token=${token}`

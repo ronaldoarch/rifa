@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parseBrazilianNumber } from '@/lib/utils'
+import { requireAdmin } from '@/lib/auth-admin'
 
 function serializeRaffle(raffle: { totalTickets: bigint; soldTickets: bigint; [key: string]: unknown }) {
   return {
@@ -14,6 +15,8 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const params = await context.params
     const body = await request.json()
@@ -54,6 +57,8 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const params = await context.params
     await prisma.raffle.delete({

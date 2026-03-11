@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-admin'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const configs = await prisma.config.findMany()
     const configMap: Record<string, string> = {}
-    
+    const SENSITIVE_KEYS = ['XGATE_PASSWORD', 'GATEBOX_PASSWORD', 'WEBHOOK_SECRET']
+
     configs.forEach((config) => {
-      configMap[config.key] = config.value
+      configMap[config.key] = SENSITIVE_KEYS.includes(config.key)
+        ? (config.value ? '••••••••' : '')
+        : config.value
     })
 
     return NextResponse.json(configMap)
@@ -21,6 +27,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const body = await request.json()
 

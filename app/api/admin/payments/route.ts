@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-admin'
 
 export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request)
+  if (authError) return authError
   try {
     const searchParams = request.nextUrl.searchParams
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '20', 10) || 20))
-    const status = searchParams.get('status')
+    const statusParam = searchParams.get('status')
+    const ALLOWED_STATUSES = ['pending', 'paid', 'failed', 'refunded'] as const
+    const status = statusParam && ALLOWED_STATUSES.includes(statusParam as string)
+      ? statusParam
+      : undefined
 
     const where = status ? { status } : {}
 
