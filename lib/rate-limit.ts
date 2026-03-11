@@ -14,9 +14,9 @@ function getClientId(request: Request): string {
 
 function cleanup() {
   const now = Date.now()
-  for (const [key, data] of store.entries()) {
+  Array.from(store.entries()).forEach(([key, data]) => {
     if (data.resetAt < now) store.delete(key)
-  }
+  })
 }
 
 let lastCleanup = Date.now()
