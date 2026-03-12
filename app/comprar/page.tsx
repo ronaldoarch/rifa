@@ -13,12 +13,22 @@ type PaymentState = 'idle' | 'generating' | 'awaiting' | 'paid' | 'error'
 function PurchaseContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [quantity, setQuantity] = useState(10)
+
+  // Lê os params da URL uma única vez na inicialização — evita que o effect
+  // resete quantity toda vez que searchParams muda de referência ao re-renderizar.
+  const [quantity, setQuantity] = useState(() => {
+    const qty = searchParams.get('quantity')
+    if (qty) {
+      const n = parseInt(qty, 10)
+      if (!isNaN(n) && n > 0) return n
+    }
+    return 10
+  })
   const [paymentState, setPaymentState] = useState<PaymentState>('idle')
   const [pixCopyPaste, setPixCopyPaste] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
-  const [raffleId, setRaffleId] = useState<string>('')
-  const [ticketPrice, setTicketPrice] = useState(19.95)
+  const [raffleId, setRaffleId] = useState<string>(() => searchParams.get('raffleId') ?? '')
+  const [ticketPrice, setTicketPrice] = useState(0)
   const [minQty, setMinQty] = useState(1)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -29,17 +39,7 @@ function PurchaseContent() {
     }
   }, [])
 
-  useEffect(() => {
-    const qty = searchParams.get('quantity')
-    const raffle = searchParams.get('raffleId')
-    if (qty) {
-      const n = parseInt(qty, 10)
-      if (!isNaN(n)) setQuantity(n)
-    }
-    if (raffle) setRaffleId(raffle)
-  }, [searchParams])
-
-  // Carrega dados da rifa (principal ou específica)
+  // Carrega dados da rifa uma única vez ao montar
   useEffect(() => {
     const fromUrl = searchParams.get('raffleId')
     let cancelled = false
@@ -60,7 +60,8 @@ function PurchaseContent() {
       })
       .catch(() => {})
     return () => { cancelled = true }
-  }, [searchParams])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const totalPrice = ticketPrice * quantity
 
@@ -312,13 +313,18 @@ function PurchaseContent() {
 
                   <button
                     onClick={handlePurchase}
-                    disabled={paymentState === 'generating'}
+                    disabled={paymentState === 'generating' || ticketPrice === 0}
                     className="w-full mt-6 bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {paymentState === 'generating' ? (
                       <>
                         <RefreshCw size={20} className="animate-spin" />
                         Gerando QR Code...
+                      </>
+                    ) : ticketPrice === 0 ? (
+                      <>
+                        <RefreshCw size={20} className="animate-spin" />
+                        Carregando...
                       </>
                     ) : (
                       <>
