@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const totalAmount = Number(raffle.ticketPrice) * quantity
+    const totalAmount = Math.round(Number(raffle.ticketPrice) * quantity * 100) / 100
     const minPurchase = Number((raffle as { minPurchaseAmount?: number }).minPurchaseAmount ?? 0)
     if (minPurchase > 0 && totalAmount < minPurchase) {
       return NextResponse.json(
