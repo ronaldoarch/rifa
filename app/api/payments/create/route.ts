@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
     })
 
     // PIX: chamada externa fora da transação
+    let pixError = false
     if (paymentMethodVal === 'pix') {
       const pix = await createPixPayment({
         userId: sessionUser.id,
@@ -175,12 +176,17 @@ export async function POST(request: NextRequest) {
         })
         ;(payment as { pixCopyPaste?: string; pixQrCode?: string }).pixCopyPaste = pix.copyPaste
         ;(payment as { transactionId?: string }).transactionId = pix.transactionId
+      } else {
+        // Sinaliza ao frontend que o QR não foi gerado (gateway indisponível)
+        pixError = true
+        console.error('PIX gateway failed for payment', payment.id)
       }
     }
 
     return NextResponse.json({
       payment,
       tickets,
+      pixError: pixError || undefined,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro ao processar pagamento'
