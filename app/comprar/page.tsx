@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { QRCodeSVG } from 'qrcode.react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { Minus, Plus, QrCode } from 'lucide-react'
@@ -204,13 +205,14 @@ function PurchaseContent() {
               {showPixCode ? (
                 <div className="bg-gray-50 p-6 rounded-lg text-center">
                   <h3 className="text-xl font-bold mb-4 text-gray-900">Escaneie o QR Code</h3>
-                  {pixQrCode ? (
+                  {pixCopyPaste ? (
                     <div className="bg-white p-4 rounded-lg mb-4 inline-block">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={pixQrCode}
-                        alt="QR Code PIX"
-                        className="w-64 h-64"
+                      <QRCodeSVG
+                        value={pixCopyPaste}
+                        size={256}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                        level="M"
                       />
                     </div>
                   ) : (
