@@ -18,14 +18,10 @@ export interface XGatePixResult {
 
 async function getConfig(): Promise<{ email: string; password: string } | null> {
   const keys = await prisma.config.findMany({
-    where: {
-      key: { in: ['XGATE_EMAIL', 'XGATE_PASSWORD'] },
-    },
+    where: { key: { in: ['XGATE_EMAIL', 'XGATE_PASSWORD'] } },
   })
   const map: Record<string, string> = {}
-  keys.forEach((k) => {
-    map[k.key] = k.value
-  })
+  keys.forEach((k) => { map[k.key] = k.value })
   const email = map.XGATE_EMAIL?.trim()
   const password = map.XGATE_PASSWORD
   if (!email || !password) return null
@@ -33,8 +29,10 @@ async function getConfig(): Promise<{ email: string; password: string } | null> 
 }
 
 /**
- * Cria um depósito PIX via XGate e retorna o código copia-e-cola e o id da transação.
- * Reutiliza o xgateCustomerId salvo no User para evitar duplicados na XGate.
+ * Cria um depósito PIX via XGate.
+ * - Reutiliza xgateCustomerId salvo no User (evita duplicados na XGate)
+ * - O SDK depositFiat aceita string (customerId existente) ou objeto (cria novo)
+ * - Resposta do SDK: { message, data: { code, id, status, customerId } }
  */
 export async function createPixPayment(params: XGatePixParams): Promise<XGatePixResult | null> {
   const config = await getConfig()
@@ -44,53 +42,44 @@ export async function createPixPayment(params: XGatePixParams): Promise<XGatePix
   }
 
   try {
-    const xgate = new Xgate({
-      email: config.email,
-      password: config.password,
-    })
+    const xgate = new Xgate({ email: config.email, password: config.password })
 
-    const document = String(params.document).replace(/\D/g, '')
-
-    // Reutiliza customer existente ou cria um novo
-    let customerId: string
+    // Reutiliza customer existente ou cria novo
     const user = await prisma.user.findUnique({
       where: { id: params.userId },
       select: { xgateCustomerId: true },
     })
 
-    if (user?.xgateCustomerId) {
-      customerId = user.xgateCustomerId
-    } else {
-      const res = await (xgate as any).customer.customerCreate({
-        name: params.name,
-        document: document || undefined,
-        email: params.email,
-        phone: params.phone,
-      })
-      customerId = res.customer._id
-      // Salva para reuso futuro
+    // Se passar string, o SDK usa como customerId diretamente (sem criar novo customer)
+    // Se passar objeto, o SDK cria o customer e retorna o ID
+    const customerParam: string | object = user?.xgateCustomerId
+      ? user.xgateCustomerId
+      : {
+          name: params.name,
+          document: String(params.document).replace(/\D/g, '') || undefined,
+          email: params.email,
+          phone: params.phone,
+        }
+
+    // O SDK retorna: { message: '...', data: { code, id, status, customerId } }
+    const result = await xgate.deposit.depositFiat(
+      params.amount,
+      customerParam as any,
+      'PIX'
+    ) as { message?: string; data?: { code?: string; id?: string; status?: string; customerId?: string } }
+
+    const data = result?.data
+    if (!data?.code || !data?.id) {
+      console.error('XGate: resposta sem code ou id', result)
+      return null
+    }
+
+    // Salva customerId para reuso nas próximas compras
+    if (!user?.xgateCustomerId && data.customerId) {
       await prisma.user.update({
         where: { id: params.userId },
-        data: { xgateCustomerId: customerId },
+        data: { xgateCustomerId: data.customerId },
       })
-    }
-
-    const currencies = await (xgate as any).currencies.getCurrenciesDeposit()
-    const currency = currencies.filter((item: any) => item.type === 'PIX')
-    if (!currency.length) {
-      console.error('XGate: PIX não está habilitado na conta')
-      return null
-    }
-
-    const { data } = await (xgate as any).API.post(
-      '/deposit',
-      { amount: params.amount, customerId, currency: currency[0] },
-      { headers: (xgate as any).getHeader() }
-    )
-
-    if (!data?.code || !data?.id) {
-      console.error('XGate: resposta sem code ou id', data)
-      return null
     }
 
     return {
@@ -99,7 +88,7 @@ export async function createPixPayment(params: XGatePixParams): Promise<XGatePix
       status: data.status,
     }
   } catch (err) {
-    const e = err as { message?: string; name?: string; status?: number }
+    const e = err as { message?: string }
     console.error('XGate create PIX error:', e?.message || e)
     return null
   }
