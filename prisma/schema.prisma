@@ -19,6 +19,7 @@ model User {
   password      String?
   role          String    @default("user") // "user" | "admin"
   credits        Float     @default(0)
+  xgateCustomerId String? // ID do customer na XGate (evita criar duplicados)
   affiliateId   String?
   affiliate     Affiliate? @relation(fields: [affiliateId], references: [id])
   referredBy    String?

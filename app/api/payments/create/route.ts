@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
     // PIX: chamada externa fora da transação
     if (paymentMethodVal === 'pix') {
       const pix = await createPixPayment({
+        userId: sessionUser.id,
         amount: totalAmount,
         document: sessionUser.cpf,
         name: sessionUser.name,

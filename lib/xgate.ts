@@ -2,6 +2,7 @@ import Xgate from 'xgate'
 import { prisma } from '@/lib/prisma'
 
 export interface XGatePixParams {
+  userId: string
   amount: number
   name: string
   document: string
@@ -33,7 +34,7 @@ async function getConfig(): Promise<{ email: string; password: string } | null> 
 
 /**
  * Cria um depósito PIX via XGate e retorna o código copia-e-cola e o id da transação.
- * O transactionId deve ser salvo no Payment para o webhook identificar quando o PIX for pago.
+ * Reutiliza o xgateCustomerId salvo no User para evitar duplicados na XGate.
  */
 export async function createPixPayment(params: XGatePixParams): Promise<XGatePixResult | null> {
   const config = await getConfig()
@@ -49,22 +50,46 @@ export async function createPixPayment(params: XGatePixParams): Promise<XGatePix
     })
 
     const document = String(params.document).replace(/\D/g, '')
-    const customer = {
-      name: params.name,
-      document: document || undefined,
-      email: params.email,
-      phone: params.phone,
+
+    // Reutiliza customer existente ou cria um novo
+    let customerId: string
+    const user = await prisma.user.findUnique({
+      where: { id: params.userId },
+      select: { xgateCustomerId: true },
+    })
+
+    if (user?.xgateCustomerId) {
+      customerId = user.xgateCustomerId
+    } else {
+      const res = await (xgate as any).customer.customerCreate({
+        name: params.name,
+        document: document || undefined,
+        email: params.email,
+        phone: params.phone,
+      })
+      customerId = res.customer._id
+      // Salva para reuso futuro
+      await prisma.user.update({
+        where: { id: params.userId },
+        data: { xgateCustomerId: customerId },
+      })
     }
 
-    const result = await xgate.deposit.depositFiat(
-      params.amount,
-      customer,
-      'PIX'
-    ) as { message?: string; data?: { status?: string; code?: string; id?: string; customerId?: string } }
+    const currencies = await (xgate as any).currencies.getCurrenciesDeposit()
+    const currency = currencies.filter((item: any) => item.type === 'PIX')
+    if (!currency.length) {
+      console.error('XGate: PIX não está habilitado na conta')
+      return null
+    }
 
-    const data = result?.data
+    const { data } = await (xgate as any).API.post(
+      '/deposit',
+      { amount: params.amount, customerId, currency: currency[0] },
+      { headers: (xgate as any).getHeader() }
+    )
+
     if (!data?.code || !data?.id) {
-      console.error('XGate: resposta sem code ou id', result)
+      console.error('XGate: resposta sem code ou id', data)
       return null
     }
 
