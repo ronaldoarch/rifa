@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Image as ImageIcon, Upload } from 'lucide-react'
 
@@ -39,9 +40,9 @@ export default function BannersManager() {
       const res = await fetch('/api/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (data.url) setFormData((f) => ({ ...f, imageUrl: data.url }))
-      else alert(data.error || 'Erro no upload')
+      else toast.error(data.error || 'Erro no upload')
     } catch {
-      alert('Erro ao enviar imagem')
+      toast.error('Erro ao enviar imagem')
     } finally {
       setUploadingImage(false)
       e.target.value = ''
@@ -85,7 +86,7 @@ export default function BannersManager() {
       }
     } catch (error) {
       console.error('Error saving banner:', error)
-      alert('Erro ao salvar banner')
+      toast.error('Erro ao salvar banner')
     }
   }
 
@@ -102,7 +103,7 @@ export default function BannersManager() {
       }
     } catch (error) {
       console.error('Error deleting banner:', error)
-      alert('Erro ao deletar banner')
+      toast.error('Erro ao deletar banner')
     }
   }
 

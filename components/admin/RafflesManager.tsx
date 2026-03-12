@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Plus, Edit, Trash2, Ticket, Upload, Trophy } from 'lucide-react'
 
 interface Raffle {
@@ -56,9 +57,9 @@ export default function RafflesManager() {
       const res = await fetch('/api/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (data.url) setFormData((f) => ({ ...f, imageUrl: data.url }))
-      else alert(data.error || 'Erro no upload')
+      else toast.error(data.error || 'Erro no upload')
     } catch {
-      alert('Erro ao enviar imagem')
+      toast.error('Erro ao enviar imagem')
     } finally {
       setUploadingImage(false)
       e.target.value = ''
@@ -96,13 +97,14 @@ export default function RafflesManager() {
       })
 
       if (response.ok) {
+        toast.success(editingRaffle ? 'Rifa atualizada!' : 'Rifa criada!')
         fetchRaffles()
         setShowModal(false)
         resetForm()
       }
     } catch (error) {
       console.error('Error saving raffle:', error)
-      alert('Erro ao salvar rifa')
+      toast.error('Erro ao salvar rifa')
     }
   }
 
@@ -115,11 +117,12 @@ export default function RafflesManager() {
       })
 
       if (response.ok) {
+        toast.success('Rifa deletada')
         fetchRaffles()
       }
     } catch (error) {
       console.error('Error deleting raffle:', error)
-      alert('Erro ao deletar rifa')
+      toast.error('Erro ao deletar rifa')
     }
   }
 
@@ -134,7 +137,7 @@ export default function RafflesManager() {
     if (!resultadoRaffle) return
     const num = winningNumberInput.replace(/\D/g, '').trim()
     if (!num) {
-      alert('Informe o número vencedor (ex.: resultado da Loteria Federal)')
+      toast.warning('Informe o número vencedor (ex.: resultado da Loteria Federal)')
       return
     }
     setSubmittingResultado(true)
@@ -146,18 +149,18 @@ export default function RafflesManager() {
       })
       const data = await res.json()
       if (!res.ok) {
-        alert(data.error || 'Erro ao registrar resultado')
+        toast.error(data.error || 'Erro ao registrar resultado')
         setSubmittingResultado(false)
         return
       }
-      alert(data.message + (data.winner ? ` Ganhador: ${data.winner.userName} (bilhete ${data.winner.ticketNumber}).` : ''))
+      toast.success(data.message + (data.winner ? ` Ganhador: ${data.winner.userName} (bilhete ${data.winner.ticketNumber}).` : ''), { duration: 8000 })
       setShowResultadoModal(false)
       setResultadoRaffle(null)
       setWinningNumberInput('')
       fetchRaffles()
     } catch (err) {
       console.error(err)
-      alert('Erro ao enviar resultado')
+      toast.error('Erro ao enviar resultado')
     } finally {
       setSubmittingResultado(false)
     }

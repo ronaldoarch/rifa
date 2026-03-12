@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Search, Filter } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
@@ -40,10 +41,14 @@ export default function PaymentsManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      if (res.ok) fetchPayments()
-      else alert((await res.json()).error || 'Erro ao atualizar')
+      if (res.ok) {
+        toast.success('Pagamento atualizado com sucesso')
+        fetchPayments()
+      } else {
+        toast.error((await res.json()).error || 'Erro ao atualizar')
+      }
     } catch {
-      alert('Erro ao atualizar pagamento')
+      toast.error('Erro ao atualizar pagamento')
     }
   }
 

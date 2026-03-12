@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Tag } from 'lucide-react'
 
@@ -94,7 +95,7 @@ export default function PromotionsManager() {
       }
     } catch (error) {
       console.error('Error saving promotion:', error)
-      alert('Erro ao salvar promoção')
+      toast.error('Erro ao salvar promoção')
     }
   }
 
@@ -111,7 +112,7 @@ export default function PromotionsManager() {
       }
     } catch (error) {
       console.error('Error deleting promotion:', error)
-      alert('Erro ao deletar promoção')
+      toast.error('Erro ao deletar promoção')
     }
   }
 

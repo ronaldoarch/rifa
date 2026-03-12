@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Upload, Check, X } from 'lucide-react'
 
@@ -94,7 +95,7 @@ export default function WinnersManager() {
       }
     } catch (error) {
       console.error('Error saving winner:', error)
-      alert('Erro ao salvar ganhador')
+      toast.error('Erro ao salvar ganhador')
     }
   }
 
@@ -111,7 +112,7 @@ export default function WinnersManager() {
       }
     } catch (error) {
       console.error('Error deleting winner:', error)
-      alert('Erro ao deletar ganhador')
+      toast.error('Erro ao deletar ganhador')
     }
   }
 

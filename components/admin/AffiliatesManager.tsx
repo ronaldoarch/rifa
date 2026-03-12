@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Copy, Check } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
@@ -71,7 +72,7 @@ export default function AffiliatesManager() {
       }
     } catch (error) {
       console.error('Error saving affiliate:', error)
-      alert('Erro ao salvar afiliado')
+      toast.error('Erro ao salvar afiliado')
     }
   }
 
@@ -88,7 +89,7 @@ export default function AffiliatesManager() {
       }
     } catch (error) {
       console.error('Error deactivating affiliate:', error)
-      alert('Erro ao desativar afiliado')
+      toast.error('Erro ao desativar afiliado')
     }
   }
 

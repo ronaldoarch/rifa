@@ -4,6 +4,7 @@ import './globals.css'
 import Script from 'next/script'
 import { prisma } from '@/lib/prisma'
 import ThemeInjector from '@/components/ThemeInjector'
+import Providers from '@/components/Providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -91,7 +92,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <ThemeInjector />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

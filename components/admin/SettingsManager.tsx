@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Save, Check, Upload, Image as ImageIcon } from 'lucide-react'
 
 export default function SettingsManager() {
@@ -43,9 +44,9 @@ export default function SettingsManager() {
       const res = await fetch('/api/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (data.url) setConfig((c) => ({ ...c, logoUrl: data.url }))
-      else alert(data.error || 'Erro no upload')
+      else toast.error(data.error || 'Erro no upload')
     } catch {
-      alert('Erro ao enviar logo')
+      toast.error('Erro ao enviar logo')
     } finally {
       setUploadingLogo(false)
       e.target.value = ''
@@ -117,11 +118,12 @@ export default function SettingsManager() {
 
       if (response.ok) {
         setSaved(true)
+        toast.success('Configurações salvas com sucesso!')
         setTimeout(() => setSaved(false), 3000)
       }
     } catch (error) {
       console.error('Error saving config:', error)
-      alert('Erro ao salvar configurações')
+      toast.error('Erro ao salvar configurações')
     }
   }
 

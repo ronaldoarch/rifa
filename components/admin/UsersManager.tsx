@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Search, Shield, ShieldOff } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
@@ -62,10 +63,10 @@ export default function UsersManager() {
         )
       } else {
         const data = await res.json().catch(() => ({}))
-        alert(data.error || 'Erro ao atualizar')
+        toast.error(data.error || 'Erro ao atualizar')
       }
     } catch {
-      alert('Erro ao atualizar role')
+      toast.error('Erro ao atualizar role')
     }
   }
 

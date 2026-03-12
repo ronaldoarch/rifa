@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Upload, Image as ImageIcon, Video } from 'lucide-react'
 
@@ -54,9 +55,9 @@ export default function ShowcaseManager() {
       const res = await fetch('/api/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (data.url) setFormData((f) => ({ ...f, mediaUrl: data.url, mediaType: file.type.startsWith('video/') ? 'video' : 'image' }))
-      else alert(data.error || 'Erro no upload')
+      else toast.error(data.error || 'Erro no upload')
     } catch {
-      alert('Erro ao enviar arquivo')
+      toast.error('Erro ao enviar arquivo')
     } finally {
       setUploadingMedia(false)
       e.target.value = ''
@@ -81,11 +82,11 @@ export default function ShowcaseManager() {
         resetForm()
       } else {
         const err = await res.json()
-        alert(err.error || 'Erro ao salvar')
+        toast.error(err.error || 'Erro ao salvar')
       }
     } catch (err) {
       console.error(err)
-      alert('Erro ao salvar')
+      toast.error('Erro ao salvar')
     }
   }
 
@@ -96,7 +97,7 @@ export default function ShowcaseManager() {
       if (res.ok) fetchItems()
     } catch (e) {
       console.error(e)
-      alert('Erro ao remover')
+      toast.error('Erro ao remover')
     }
   }
 

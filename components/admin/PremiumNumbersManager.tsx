@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Trash2, Gift } from 'lucide-react'
 
@@ -73,7 +74,7 @@ export default function PremiumNumbersManager() {
     if (!selectedRaffleId || !formNumber.trim() || formPrize === '') return
     const amount = parseFloat(formPrize.replace(',', '.'))
     if (isNaN(amount) || amount < 0) {
-      alert('Informe um valor de premiação válido.')
+      toast.warning('Informe um valor de premiação válido.')
       return
     }
     setSaving(true)
@@ -97,11 +98,11 @@ export default function PremiumNumbersManager() {
         setFormPrize('')
         fetchPremiumNumbers(selectedRaffleId)
       } else {
-        alert(data.error || 'Erro ao cadastrar bilhete premiado')
+        toast.error(data.error || 'Erro ao cadastrar bilhete premiado')
       }
     } catch (error) {
       console.error('Error adding premium number:', error)
-      alert('Erro ao cadastrar bilhete premiado')
+      toast.error('Erro ao cadastrar bilhete premiado')
     } finally {
       setSaving(false)
     }
@@ -116,11 +117,11 @@ export default function PremiumNumbersManager() {
       if (response.ok) {
         fetchPremiumNumbers(selectedRaffleId)
       } else {
-        alert('Erro ao remover')
+        toast.error('Erro ao remover')
       }
     } catch (error) {
       console.error('Error deleting premium number:', error)
-      alert('Erro ao remover')
+      toast.error('Erro ao remover')
     }
   }
 

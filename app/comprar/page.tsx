@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { Minus, Plus, QrCode } from 'lucide-react'
@@ -79,7 +80,7 @@ function PurchaseContent() {
 
   const handlePurchase = async () => {
     if (!raffleId) {
-      alert('Aguarde, carregando a rifa...')
+      toast.info('Aguarde, carregando a rifa...')
       return
     }
     // Track purchase event with UTMfy
@@ -122,11 +123,11 @@ function PurchaseContent() {
           })
         }
       } else {
-        alert('Erro ao gerar pagamento PIX')
+        toast.error('Erro ao gerar pagamento PIX')
       }
     } catch (error) {
       console.error('Error creating payment:', error)
-      alert('Erro ao processar pagamento')
+      toast.error('Erro ao processar pagamento')
     } finally {
       setLoading(false)
     }
@@ -231,7 +232,7 @@ function PurchaseContent() {
                     onClick={() => {
                       if (pixCopyPaste) {
                         navigator.clipboard.writeText(pixCopyPaste)
-                        alert('Código PIX copiado!')
+                        toast.success('Código PIX copiado!')
                       }
                     }}
                     disabled={!pixCopyPaste}
