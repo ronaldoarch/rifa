@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, Ticket, Upload, Trophy } from 'lucide-react'
+import { UPLOAD_MAX_IMAGE_MB, validateClientImageUpload } from '@/lib/upload-limits'
 
 interface Raffle {
   id: string
@@ -49,13 +50,27 @@ export default function RafflesManager() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    const invalid = validateClientImageUpload(file)
+    if (invalid) {
+      toast.error(invalid)
+      e.target.value = ''
+      return
+    }
     setUploadingImage(true)
     try {
       const form = new FormData()
       form.append('file', file)
       form.append('type', 'raffle')
-      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      })
       const data = await res.json()
+      if (res.status === 401 || res.status === 403) {
+        toast.error('Faça login como administrador para enviar arquivos.')
+        return
+      }
       if (data.url) setFormData((f) => ({ ...f, imageUrl: data.url }))
       else toast.error(data.error || 'Erro no upload')
     } catch {
@@ -485,7 +500,9 @@ export default function RafflesManager() {
                       disabled={uploadingImage}
                     />
                   </label>
-                  <span className="text-sm text-gray-500">ou cole a URL</span>
+                  <span className="text-sm text-gray-500">
+                    ou cole a URL (imagem máx. {UPLOAD_MAX_IMAGE_MB} MB)
+                  </span>
                 </div>
                 <input
                   type="text"
