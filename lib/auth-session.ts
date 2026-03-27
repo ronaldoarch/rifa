@@ -7,6 +7,7 @@ export interface SessionUser {
   name: string
   email: string
   phone: string | null
+  role: string
   /** Valor no momento da query. Pode estar desatualizado se o usuário ganhou créditos (premium) após o login. */
   credits: number
   role: string
@@ -33,6 +34,7 @@ export async function getSessionUser(request: NextRequest): Promise<SessionUser 
       name: session.user.name,
       email: session.user.email,
       phone: session.user.phone,
+      role: session.user.role,
       credits: session.user.credits,
       role: session.user.role,
     }

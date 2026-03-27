@@ -38,7 +38,7 @@ export default function XGateCredentialsManager() {
       })
       if (res.ok) {
         setSaved(true)
-        setMessage('Credenciais salvas. Os pagamentos PIX usarão a XGate.')
+        setMessage('Credenciais XGate salvas. Ative "XGate" em Gateway PIX acima para usar na compra.')
         setTimeout(() => { setSaved(false); setMessage('') }, 5000)
       } else {
         const data = await res.json().catch(() => ({}))

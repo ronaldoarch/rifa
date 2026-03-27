@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, Trash2 } from 'lucide-react'
+import { AlertTriangle, Cloud, Trash2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 interface Payment {
@@ -10,6 +10,7 @@ interface Payment {
   amount: number
   status: string
   paymentMethod: string
+  transactionId: string | null
   createdAt: string
   user: {
     name: string
@@ -30,6 +31,33 @@ export default function PaymentsManager() {
   const [pagination, setPagination] = useState({ total: 0, totalPages: 0 })
   const [cancellingExpired, setCancellingExpired] = useState(false)
   const [expireMinutes, setExpireMinutes] = useState(60)
+  const [cyberModalJson, setCyberModalJson] = useState<string | null>(null)
+  const [cyberLoadingPaymentId, setCyberLoadingPaymentId] = useState<string | null>(null)
+
+  const handleCyberLookup = async (payment: Payment) => {
+    const tid = payment.transactionId?.trim()
+    if (!tid) {
+      toast.error('Este pagamento não tem ID de transação do gateway.')
+      return
+    }
+    setCyberLoadingPaymentId(payment.id)
+    try {
+      const res = await fetch(
+        `/api/admin/cyber/transactions/${encodeURIComponent(tid)}`,
+        { credentials: 'include' }
+      )
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(typeof data.error === 'string' ? data.error : 'Erro ao consultar a Cyber')
+        return
+      }
+      setCyberModalJson(JSON.stringify(data, null, 2))
+    } catch {
+      toast.error('Erro de rede ao consultar a Cyber')
+    } finally {
+      setCyberLoadingPaymentId(null)
+    }
+  }
 
   const handleUpdateStatus = async (paymentId: string, status: string) => {
     const isCancelling = status === 'failed'
@@ -122,6 +150,41 @@ export default function PaymentsManager() {
 
   return (
     <div>
+      {cyberModalJson && (
+        <button
+          type="button"
+          className="fixed inset-0 z-50 bg-black/50 border-0 cursor-default"
+          aria-label="Fechar"
+          onClick={() => setCyberModalJson(null)}
+        />
+      )}
+      {cyberModalJson && (
+        <div className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none">
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col pointer-events-auto border border-gray-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cyber-modal-title"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <h3 id="cyber-modal-title" className="text-lg font-semibold text-gray-900">
+                Resposta Cyber Payment
+              </h3>
+              <button
+                type="button"
+                onClick={() => setCyberModalJson(null)}
+                className="text-gray-500 hover:text-gray-800 text-sm font-medium px-2 py-1"
+              >
+                Fechar
+              </button>
+            </div>
+            <pre className="text-xs overflow-auto p-4 flex-1 bg-gray-50 text-gray-800 whitespace-pre-wrap break-all">
+              {cyberModalJson}
+            </pre>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Pagamentos</h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -232,6 +295,18 @@ export default function PaymentsManager() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex flex-col gap-1">
+                        {payment.paymentMethod === 'pix' && payment.transactionId && (
+                          <button
+                            type="button"
+                            onClick={() => handleCyberLookup(payment)}
+                            disabled={cyberLoadingPaymentId === payment.id}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium text-left inline-flex items-center gap-1 disabled:opacity-50"
+                            title="GET /payments/transactions/{id} na API Cyber"
+                          >
+                            <Cloud size={12} className="flex-shrink-0" />
+                            {cyberLoadingPaymentId === payment.id ? 'Consultando…' : 'Status na Cyber'}
+                          </button>
+                        )}
                         {payment.status === 'pending' && (
                           <>
                             <button

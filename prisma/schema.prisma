@@ -189,7 +189,7 @@ model Config {
 // Idempotência do webhook: evita processar o mesmo pagamento duas vezes
 model WebhookProcessed {
   id            String   @id @default(cuid())
-  source        String   // "xgate" | "generic"
+  source        String   // "xgate" | "cyber" | "generic"
   transactionId String   // id da transação (XGate: body.id, genérico: externalId)
   paymentId     String
   processedAt   DateTime @default(now())

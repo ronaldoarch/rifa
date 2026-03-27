@@ -3,6 +3,7 @@
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Upload, Image as ImageIcon, Video } from 'lucide-react'
+import { UPLOAD_MAX_IMAGE_MB, validateClientShowcaseFile } from '@/lib/upload-limits'
 
 interface ShowcaseItem {
   id: string
@@ -47,15 +48,34 @@ export default function ShowcaseManager() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    const invalid = validateClientShowcaseFile(file)
+    if (invalid) {
+      toast.error(invalid)
+      e.target.value = ''
+      return
+    }
     setUploadingMedia(true)
     try {
       const form = new FormData()
       form.append('file', file)
       form.append('type', 'showcase')
-      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      })
       const data = await res.json()
-      if (data.url) setFormData((f) => ({ ...f, mediaUrl: data.url, mediaType: file.type.startsWith('video/') ? 'video' : 'image' }))
-      else toast.error(data.error || 'Erro no upload')
+      if (res.status === 401 || res.status === 403) {
+        toast.error('Faça login como administrador para enviar arquivos.')
+        return
+      }
+      if (data.url) {
+        setFormData((f) => ({
+          ...f,
+          mediaUrl: data.url,
+          mediaType: file.type.startsWith('video/') ? 'video' : 'image',
+        }))
+      } else toast.error(data.error || 'Erro no upload')
     } catch {
       toast.error('Erro ao enviar arquivo')
     } finally {
@@ -218,6 +238,9 @@ export default function ShowcaseManager() {
               </div>
               <div>
                 <label className="block text-gray-700 font-bold mb-1">Mídia (foto ou vídeo) *</label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Imagem até {UPLOAD_MAX_IMAGE_MB} MB (JPEG, PNG, GIF, WebP) ou vídeo até 80 MB (MP4, WebM, MOV).
+                </p>
                 <div className="flex gap-2 mb-2">
                   <label className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg cursor-pointer hover:bg-green-700 text-sm">
                     <Upload size={16} />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Save, Check, Upload, Image as ImageIcon } from 'lucide-react'
+import { UPLOAD_MAX_IMAGE_MB, validateClientImageUpload } from '@/lib/upload-limits'
 
 export default function SettingsManager() {
   const [config, setConfig] = useState({
@@ -36,13 +37,27 @@ export default function SettingsManager() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    const invalid = validateClientImageUpload(file)
+    if (invalid) {
+      toast.error(invalid)
+      e.target.value = ''
+      return
+    }
     setUploadingLogo(true)
     try {
       const form = new FormData()
       form.append('file', file)
       form.append('type', 'logo')
-      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      })
       const data = await res.json()
+      if (res.status === 401 || res.status === 403) {
+        toast.error('Faça login como administrador para enviar arquivos.')
+        return
+      }
       if (data.url) setConfig((c) => ({ ...c, logoUrl: data.url }))
       else toast.error(data.error || 'Erro no upload')
     } catch {
@@ -202,7 +217,7 @@ export default function SettingsManager() {
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              Exibida no header ao lado do nome da plataforma. Máx. 5MB (JPEG, PNG, GIF, WebP).
+              Exibida no header ao lado do nome da plataforma. Máx. {UPLOAD_MAX_IMAGE_MB} MB (JPEG, PNG, GIF, WebP).
             </p>
           </div>
 
