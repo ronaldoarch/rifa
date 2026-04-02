@@ -24,12 +24,22 @@ export default function Header() {
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
+  const fetchUser = () => {
     fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => setUser(data.user || null))
       .catch(() => setUser(null))
+  }
+
+  useEffect(() => {
+    fetchUser()
   }, [pathname])
+
+  useEffect(() => {
+    const onSsoLogin = () => fetchUser()
+    window.addEventListener('sso-login', onSsoLogin)
+    return () => window.removeEventListener('sso-login', onSsoLogin)
+  }, [])
 
   const navItems = [
     { href: '/', label: 'Início' },
