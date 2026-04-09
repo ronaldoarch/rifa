@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyWebhookSignature } from '@/lib/webhook-verify'
 
 /**
- * Webhook para confirmação de PIX (XGate, Gatebox ou outro gateway).
+ * Webhook para confirmação de PIX (Cyber Payment, XGate, Gatebox ou genérico).
  * Configure no painel do gateway a URL: https://seu-dominio.com/api/payments/webhook
  *
  * Segurança: defina WEBHOOK_SECRET no .env. O gateway deve enviar:
@@ -35,6 +35,89 @@ export async function POST(request: NextRequest) {
       )
     } else {
       console.warn('Webhook: WEBHOOK_SECRET não definido (apenas em dev)')
+    }
+
+    // Cyber Payment: { id, type: "pix.in.confirmation", data: { transactionId, status, metadata } }
+    const cyberType = typeof body.type === 'string' ? body.type : ''
+    if (cyberType === 'pix.in.confirmation' && body.data && typeof body.data === 'object') {
+      const data = body.data as Record<string, unknown>
+      const approved =
+        data.status === 'APPROVED' ||
+        data.internalStatus === 'approved'
+      if (!approved) {
+        return NextResponse.json({ ok: true, message: 'Evento ignorado (não aprovado)' })
+      }
+
+      const evtId = typeof body.id === 'string' ? body.id : ''
+      if (!evtId) {
+        return NextResponse.json({ error: 'Cyber webhook sem id do evento' }, { status: 400 })
+      }
+
+      const existing = await prisma.webhookProcessed.findUnique({
+        where: { source_transactionId: { source: 'cyber', transactionId: evtId } },
+      })
+      if (existing) {
+        return NextResponse.json({ ok: true, message: 'Já processado' })
+      }
+
+      const txId =
+        typeof data.transactionId === 'string' && data.transactionId
+          ? data.transactionId
+          : undefined
+      const meta =
+        data.metadata && typeof data.metadata === 'object'
+          ? (data.metadata as Record<string, unknown>)
+          : undefined
+      const metaPaymentId =
+        meta &&
+        (typeof meta.payment_id === 'string'
+          ? meta.payment_id
+          : typeof meta.order_id === 'string'
+            ? meta.order_id
+            : undefined)
+
+      let payment = txId
+        ? await prisma.payment.findFirst({ where: { transactionId: txId } })
+        : null
+      if (!payment && metaPaymentId) {
+        payment = await prisma.payment.findUnique({ where: { id: metaPaymentId } })
+      }
+      if (!payment) {
+        return NextResponse.json(
+          { error: 'Pagamento não encontrado para esta transação Cyber' },
+          { status: 404 }
+        )
+      }
+      if (payment.status === 'paid') {
+        await prisma.webhookProcessed.upsert({
+          where: { source_transactionId: { source: 'cyber', transactionId: evtId } },
+          create: { source: 'cyber', transactionId: evtId, paymentId: payment.id },
+          update: {},
+        })
+        return NextResponse.json({ ok: true, message: 'Já estava pago' })
+      }
+
+      try {
+        await prisma.$transaction([
+          prisma.webhookProcessed.create({
+            data: { source: 'cyber', transactionId: evtId, paymentId: payment.id },
+          }),
+          prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: 'paid',
+              ...(txId && !payment.transactionId ? { transactionId: txId } : {}),
+            },
+          }),
+        ])
+      } catch (e) {
+        const err = e as { code?: string }
+        if (err.code === 'P2002') {
+          return NextResponse.json({ ok: true, message: 'Já processado (concorrência)' })
+        }
+        throw e
+      }
+      return NextResponse.json({ ok: true, status: 'paid' })
     }
 
     // Payload XGate: id = transactionId da transação XGate, status = PAID, operation = DEPOSIT

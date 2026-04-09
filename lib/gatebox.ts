@@ -123,7 +123,7 @@ export async function createPixPayment(params: {
   email?: string
   phone?: string
   description?: string
-}): Promise<{ copyPaste: string; qrCode?: string } | null> {
+}): Promise<{ copyPaste: string; qrCode?: string; transactionId?: string } | null> {
   const config = await getConfig()
   if (!config) {
     console.error('Gatebox: credenciais não configuradas')
@@ -151,5 +151,10 @@ export async function createPixPayment(params: {
     console.error('Gatebox: resposta sem brCode/copyPaste')
     return null
   }
-  return qrCode !== undefined ? { copyPaste, qrCode } : { copyPaste }
+  const transactionId =
+    typeof result.transactionId === 'string' && result.transactionId
+      ? result.transactionId
+      : undefined
+  const base = qrCode !== undefined ? { copyPaste, qrCode } : { copyPaste }
+  return transactionId ? { ...base, transactionId } : base
 }

@@ -10,6 +10,11 @@ import { Minus, Plus, QrCode, CheckCircle, RefreshCw, AlertCircle } from 'lucide
 
 type PaymentState = 'idle' | 'generating' | 'awaiting' | 'paid' | 'error'
 
+/** Igual ao limite em /api/payments/create */
+const MAX_QUANTITY_PER_PURCHASE = 500
+
+type RaffleLoadState = 'loading' | 'ready' | 'error'
+
 function PurchaseContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -20,6 +25,9 @@ function PurchaseContent() {
   const [raffleId, setRaffleId] = useState<string>('')
   const [ticketPrice, setTicketPrice] = useState(19.95)
   const [minQty, setMinQty] = useState(1)
+  const [maxQty, setMaxQty] = useState(MAX_QUANTITY_PER_PURCHASE)
+  const [availableTickets, setAvailableTickets] = useState<number | null>(null)
+  const [raffleLoadState, setRaffleLoadState] = useState<RaffleLoadState>('loading')
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Stop polling on unmount
@@ -39,30 +47,67 @@ function PurchaseContent() {
     if (raffle) setRaffleId(raffle)
   }, [searchParams])
 
-  // Carrega dados da rifa (principal ou específica)
+  // Carrega dados da rifa (principal ou específica) — preço e estoque vêm do servidor (fonte da verdade)
   useEffect(() => {
     const fromUrl = searchParams.get('raffleId')
     let cancelled = false
+    setRaffleLoadState('loading')
     const endpoint = fromUrl ? `/api/raffles/${fromUrl}` : '/api/raffles/principal'
     fetch(endpoint)
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
-        if (cancelled || !data?.id) return
+        if (cancelled) return
+        if (!data?.id) {
+          setRaffleLoadState('error')
+          return
+        }
         if (!fromUrl) setRaffleId(data.id)
         const price = Number(data.ticketPrice)
-        if (Number.isFinite(price) && price > 0) setTicketPrice(price)
-        const min = data.minPurchaseAmount != null ? Number(data.minPurchaseAmount) : 0
-        if (min > 0 && price > 0) {
-          const mq = Math.ceil(min / price)
-          setMinQty(mq)
-          setQuantity((q) => Math.max(q, mq))
+        if (!Number.isFinite(price) || price <= 0) {
+          setRaffleLoadState('error')
+          return
         }
+        setTicketPrice(price)
+        const totalT = Number(data.totalTickets)
+        const soldT = Number(data.soldTickets)
+        const available = Number.isFinite(totalT) && Number.isFinite(soldT)
+          ? Math.max(0, totalT - soldT)
+          : 0
+        setAvailableTickets(available)
+        const maxBuy = Math.min(MAX_QUANTITY_PER_PURCHASE, available)
+        setMaxQty(maxBuy)
+
+        const min = data.minPurchaseAmount != null ? Number(data.minPurchaseAmount) : 0
+        const mq = min > 0 && price > 0 ? Math.ceil(min / price) : 1
+        setMinQty(mq)
+
+        setQuantity((q) => {
+          const lo = mq
+          if (maxBuy <= 0) return lo
+          if (maxBuy < lo) return maxBuy
+          return Math.min(Math.max(q, lo), maxBuy)
+        })
+        setRaffleLoadState('ready')
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setRaffleLoadState('error')
+      })
     return () => { cancelled = true }
   }, [searchParams])
 
   const totalPrice = ticketPrice * quantity
+  const soldOut = availableTickets !== null && availableTickets <= 0
+  const belowMinStock =
+    raffleLoadState === 'ready' && maxQty > 0 && minQty > maxQty
+  const canShowTotals = raffleLoadState === 'ready' && !soldOut && !belowMinStock
+  const canPurchase =
+    raffleLoadState === 'ready' &&
+    !!raffleId &&
+    !soldOut &&
+    !belowMinStock &&
+    maxQty > 0 &&
+    quantity >= minQty &&
+    quantity <= maxQty
 
   // Inicia polling para verificar pagamento
   const startPolling = (pmtId: string) => {
@@ -84,8 +129,12 @@ function PurchaseContent() {
   }
 
   const handlePurchase = async () => {
-    if (!raffleId) {
+    if (!raffleId || raffleLoadState !== 'ready') {
       toast.info('Aguarde, carregando a rifa...')
+      return
+    }
+    if (soldOut || quantity > maxQty || quantity < minQty) {
+      toast.error('Ajuste a quantidade de bilhetes conforme o disponível na rifa.')
       return
     }
 
@@ -115,7 +164,7 @@ function PurchaseContent() {
       const pmtId: string = data.payment?.id || ''
 
       if (data.pixError || !copyPaste) {
-        // PIX gerado mas sem código (XGate indisponível ou mal configurado)
+        // PIX gerado mas sem código (gateway indisponível ou mal configurado)
         toast.error('Não foi possível gerar o QR Code PIX. Verifique as configurações do gateway ou tente novamente.')
         setPaymentState('error')
         return
@@ -127,7 +176,8 @@ function PurchaseContent() {
       if (pmtId) startPolling(pmtId)
 
       if (typeof window !== 'undefined' && (window as any).utmify) {
-        (window as any).utmify.track('pix_qr_generated', { payment_id: pmtId, amount: totalPrice })
+        const paidAmount = typeof data.payment?.amount === 'number' ? data.payment.amount : totalPrice
+        ;(window as any).utmify.track('pix_qr_generated', { payment_id: pmtId, amount: paidAmount })
       }
     } catch (error) {
       console.error('Error creating payment:', error)
@@ -163,31 +213,80 @@ function PurchaseContent() {
               <div className="bg-gray-50 p-6 rounded-lg">
                 <h2 className="text-xl font-bold mb-4 text-gray-900">Resumo da Compra</h2>
 
+                {raffleLoadState === 'loading' && (
+                  <p className="text-sm text-gray-600 mb-4">Carregando preço e disponibilidade…</p>
+                )}
+                {raffleLoadState === 'error' && (
+                  <p className="text-sm text-red-600 mb-4">Não foi possível carregar esta rifa. Atualize a página ou volte mais tarde.</p>
+                )}
+                {soldOut && raffleLoadState === 'ready' && (
+                  <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                    Bilhetes esgotados para esta rifa.
+                  </p>
+                )}
+                {belowMinStock && (
+                  <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                    Não há bilhetes suficientes para atingir o valor mínimo de compra desta rifa ({minQty} bilhetes necessários, {maxQty} disponível(is)).
+                  </p>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-gray-900">Quantidade de cotas:</span>
                   <div className="flex items-center space-x-3">
                     <button
+                      type="button"
                       onClick={() => setQuantity(Math.max(minQty, quantity - 1))}
-                      disabled={quantity <= minQty || paymentState !== 'idle'}
+                      disabled={
+                        quantity <= minQty ||
+                        paymentState !== 'idle' ||
+                        raffleLoadState !== 'ready' ||
+                        soldOut
+                      }
                       className="bg-gray-200 p-2 rounded hover:bg-gray-300 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Minus size={20} />
                     </button>
                     <span className="text-xl font-bold text-gray-900">{quantity}</span>
                     <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      disabled={paymentState !== 'idle'}
+                      type="button"
+                      onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
+                      disabled={
+                        quantity >= maxQty ||
+                        paymentState !== 'idle' ||
+                        raffleLoadState !== 'ready' ||
+                        soldOut
+                      }
                       className="bg-gray-200 p-2 rounded hover:bg-gray-300 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Plus size={20} />
                     </button>
                   </div>
                 </div>
+                {raffleLoadState === 'ready' && maxQty > 0 && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Máximo nesta compra: {maxQty} (até {MAX_QUANTITY_PER_PURCHASE} por pedido)
+                    {minQty > 1 && ` · Mínimo: ${minQty} (valor mínimo da rifa)`}
+                  </p>
+                )}
 
                 <div className="space-y-2 border-t pt-4">
+                  {canShowTotals && (
+                    <div className="flex justify-between text-sm text-gray-700">
+                      <span>
+                        {quantity} × R$ {ticketPrice.toFixed(2).replace('.', ',')}
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        R$ {totalPrice.toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-xl font-bold border-t pt-2 text-gray-900">
                     <span>Total:</span>
-                    <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+                    <span>
+                      {canShowTotals
+                        ? `R$ ${totalPrice.toFixed(2).replace('.', ',')}`
+                        : '—'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -311,8 +410,9 @@ function PurchaseContent() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={handlePurchase}
-                    disabled={paymentState === 'generating'}
+                    disabled={paymentState === 'generating' || !canPurchase}
                     className="w-full mt-6 bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {paymentState === 'generating' ? (
@@ -323,7 +423,11 @@ function PurchaseContent() {
                     ) : (
                       <>
                         <QrCode size={20} />
-                        Gerar QR Code PIX — R$ {totalPrice.toFixed(2).replace('.', ',')}
+                        {canShowTotals ? (
+                          <>Gerar QR Code PIX — R$ {totalPrice.toFixed(2).replace('.', ',')}</>
+                        ) : (
+                          <>Gerar QR Code PIX</>
+                        )}
                       </>
                     )}
                   </button>

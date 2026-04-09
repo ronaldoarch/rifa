@@ -3,6 +3,7 @@
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Image as ImageIcon, Upload } from 'lucide-react'
+import { UPLOAD_MAX_IMAGE_MB, validateClientImageUpload } from '@/lib/upload-limits'
 
 interface Banner {
   id: string
@@ -32,13 +33,27 @@ export default function BannersManager() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    const invalid = validateClientImageUpload(file)
+    if (invalid) {
+      toast.error(invalid)
+      e.target.value = ''
+      return
+    }
     setUploadingImage(true)
     try {
       const form = new FormData()
       form.append('file', file)
       form.append('type', 'banner')
-      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      })
       const data = await res.json()
+      if (res.status === 401 || res.status === 403) {
+        toast.error('Faça login como administrador para enviar arquivos.')
+        return
+      }
       if (data.url) setFormData((f) => ({ ...f, imageUrl: data.url }))
       else toast.error(data.error || 'Erro no upload')
     } catch {
@@ -244,7 +259,9 @@ export default function BannersManager() {
                       disabled={uploadingImage}
                     />
                   </label>
-                  <span className="text-sm text-gray-500 self-center">ou cole a URL abaixo</span>
+                  <span className="text-sm text-gray-500 self-center">
+                    ou cole a URL abaixo (máx. {UPLOAD_MAX_IMAGE_MB} MB)
+                  </span>
                 </div>
                 <input
                   type="text"

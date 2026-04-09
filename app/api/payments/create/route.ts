@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createPixPayment } from '@/lib/xgate'
+import { createGatewayPixPayment } from '@/lib/pix-payment'
 import { rateLimit } from '@/lib/rate-limit'
 import { requireSession } from '@/lib/auth-session'
 
@@ -158,13 +158,15 @@ export async function POST(request: NextRequest) {
     // PIX: chamada externa fora da transação
     let pixError = false
     if (paymentMethodVal === 'pix') {
-      const pix = await createPixPayment({
+      const pix = await createGatewayPixPayment({
         userId: sessionUser.id,
+        paymentId: payment.id,
         amount: totalAmount,
         document: sessionUser.cpf,
         name: sessionUser.name,
         email: sessionUser.email ?? undefined,
         phone: sessionUser.phone ?? undefined,
+        description: `Rifa ${raffleId} — ${quantity} bilhete(s)`,
       })
       if (pix) {
         await prisma.payment.update({
@@ -172,10 +174,14 @@ export async function POST(request: NextRequest) {
           data: {
             pixCopyPaste: pix.copyPaste,
             transactionId: pix.transactionId,
+            ...(pix.qrCode ? { pixQrCode: pix.qrCode } : {}),
           },
         })
         ;(payment as { pixCopyPaste?: string; pixQrCode?: string }).pixCopyPaste = pix.copyPaste
         ;(payment as { transactionId?: string }).transactionId = pix.transactionId
+        if (pix.qrCode) {
+          ;(payment as { pixQrCode?: string }).pixQrCode = pix.qrCode
+        }
       } else {
         // Sinaliza ao frontend que o QR não foi gerado (gateway indisponível)
         pixError = true
