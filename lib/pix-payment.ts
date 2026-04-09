@@ -2,8 +2,9 @@ import { prisma } from '@/lib/prisma'
 import { createPixPayment as xgateCreatePix } from '@/lib/xgate'
 import { createPixPayment as gateboxCreatePix } from '@/lib/gatebox'
 import { createPixPayment as cyberCreatePix } from '@/lib/cyber-payment'
+import { createPixPayment as sarrixCreatePix } from '@/lib/sarrixpay'
 
-export type PixGatewayId = 'xgate' | 'gatebox' | 'cyber'
+export type PixGatewayId = 'xgate' | 'gatebox' | 'cyber' | 'sarrix'
 
 export interface GatewayPixParams {
   userId: string
@@ -24,21 +25,37 @@ export interface GatewayPixResult {
 
 async function getPixGateway(): Promise<PixGatewayId> {
   const env = process.env.PIX_GATEWAY?.trim().toLowerCase()
-  if (env === 'gatebox' || env === 'cyber' || env === 'xgate') return env
+  if (env === 'gatebox' || env === 'cyber' || env === 'xgate' || env === 'sarrix') return env
   const row = await prisma.config.findUnique({ where: { key: 'PIX_GATEWAY' } })
   const v = row?.value?.trim().toLowerCase()
-  if (v === 'gatebox' || v === 'cyber') return v
+  if (v === 'gatebox' || v === 'cyber' || v === 'sarrix') return v
   return 'xgate'
 }
 
 /**
- * Cria cobrança PIX conforme o gateway configurado (Config PIX_GATEWAY: xgate | gatebox | cyber).
+ * Cria cobrança PIX conforme o gateway configurado (Config PIX_GATEWAY: xgate | gatebox | cyber | sarrix).
  * Padrão: xgate (compatível com instalações existentes).
  */
 export async function createGatewayPixPayment(
   params: GatewayPixParams
 ): Promise<GatewayPixResult | null> {
   const gateway = await getPixGateway()
+
+  if (gateway === 'sarrix') {
+    const pix = await sarrixCreatePix({
+      paymentId: params.paymentId,
+      amount: params.amount,
+      name: params.name,
+      document: params.document,
+      description: params.description,
+    })
+    if (!pix) return null
+    return {
+      copyPaste: pix.copyPaste,
+      transactionId: pix.transactionId,
+      ...(pix.qrCode ? { qrCode: pix.qrCode } : {}),
+    }
+  }
 
   if (gateway === 'cyber') {
     const email = params.email?.trim()

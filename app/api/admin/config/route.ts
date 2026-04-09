@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
       'XGATE_PASSWORD',
       'GATEBOX_PASSWORD',
       'CYBER_PAYMENT_API_KEY',
+      'SARRIXPAY_CLIENT_SECRET',
       'WEBHOOK_SECRET',
     ]
 
