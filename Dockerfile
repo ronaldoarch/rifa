@@ -1,10 +1,13 @@
 # Dockerfile otimizado para Coolify
 # Debian Bullseye (11) tem libssl.so.1.1; Alpine/Bookworm usam OpenSSL 3 e quebram o engine do Prisma
-FROM node:20-bullseye-slim AS base
+#
+# Observação (Coolify): builds podem falhar em `apt-get update` por instabilidade de rede/timeout.
+# Para reduzir dependência de rede durante o build, usamos a imagem Debian completa (não slim)
+# e evitamos `apt-get` nas etapas de build/runtime.
+FROM node:20-bullseye AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy package files
@@ -40,7 +43,6 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates libssl1.1 && rm -rf /var/lib/apt/lists/*
 
 # Copy necessary files for standalone build
 # Note: standalone output includes server.js, node_modules, and .next in its root

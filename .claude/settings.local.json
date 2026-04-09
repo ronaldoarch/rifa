@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm install:*)",
+      "Bash(grep -v \"//.*alert\\(\")",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:api.xgateglobal.com)",
+      "Bash(node -e \":*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:placeholder@localhost:5432/postgres\" npx prisma generate)"
+    ]
+  }
+}

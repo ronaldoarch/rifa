@@ -9,6 +9,7 @@ const GATEWAYS = [
   { value: 'xgate', label: 'XGate' },
   { value: 'gatebox', label: 'Gatebox' },
   { value: 'cyber', label: 'Cyber Payment (Escale Cyber)' },
+  { value: 'sarrix', label: 'SarrixPay' },
 ] as const
 
 export default function PixGatewayManager() {
@@ -25,6 +26,15 @@ export default function PixGatewayManager() {
   const [cyberSaved, setCyberSaved] = useState(false)
   const [cyberMessage, setCyberMessage] = useState('')
 
+  const [sarrixClientId, setSarrixClientId] = useState('')
+  const [sarrixSecret, setSarrixSecret] = useState('')
+  const [sarrixBaseUrl, setSarrixBaseUrl] = useState('https://apiv1.sarrixpay.com')
+  const [sarrixLoading, setSarrixLoading] = useState(true)
+  const [sarrixSaving, setSarrixSaving] = useState(false)
+  const [sarrixSaved, setSarrixSaved] = useState(false)
+  const [sarrixMessage, setSarrixMessage] = useState('')
+  const [showSarrixSecret, setShowSarrixSecret] = useState(false)
+
   useEffect(() => {
     fetch('/api/admin/config', { credentials: 'include' })
       .then((res) => res.json())
@@ -32,11 +42,15 @@ export default function PixGatewayManager() {
         setGateway(data.PIX_GATEWAY || 'xgate')
         setBaseUrl(data.CYBER_PAYMENT_BASE_URL || 'https://api.escalecyber.com/v1')
         setApiKey(data.CYBER_PAYMENT_API_KEY || '')
+        setSarrixClientId(data.SARRIXPAY_CLIENT_ID || '')
+        setSarrixSecret(data.SARRIXPAY_CLIENT_SECRET || '')
+        setSarrixBaseUrl(data.SARRIXPAY_BASE_URL || 'https://apiv1.sarrixpay.com')
       })
       .catch(() => setGwMessage('Erro ao carregar gateway ativo'))
       .finally(() => {
         setGwLoading(false)
         setCyberLoading(false)
+        setSarrixLoading(false)
       })
   }, [])
 
@@ -94,6 +108,47 @@ export default function PixGatewayManager() {
       setCyberMessage('Erro ao salvar credenciais')
     } finally {
       setCyberSaving(false)
+    }
+  }
+
+  const saveSarrix = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSarrixMessage('')
+    setSarrixSaving(true)
+    try {
+      const secretTrim = sarrixSecret.trim()
+      const secretLooksMasked = /^•+$/.test(secretTrim)
+      const payload: Record<string, string> = {
+        SARRIXPAY_CLIENT_ID: sarrixClientId.trim(),
+        SARRIXPAY_BASE_URL: sarrixBaseUrl.trim() || 'https://apiv1.sarrixpay.com',
+      }
+      if (secretTrim && !secretLooksMasked) {
+        payload.SARRIXPAY_CLIENT_SECRET = secretTrim
+      }
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        setSarrixSaved(true)
+        setSarrixMessage('Credenciais SarrixPay salvas.')
+        if (payload.SARRIXPAY_CLIENT_SECRET) {
+          setSarrixSecret('••••••••')
+        }
+        setTimeout(() => {
+          setSarrixSaved(false)
+          setSarrixMessage('')
+        }, 5000)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setSarrixMessage(data.error || 'Erro ao salvar')
+      }
+    } catch {
+      setSarrixMessage('Erro ao salvar credenciais')
+    } finally {
+      setSarrixSaving(false)
     }
   }
 
@@ -218,6 +273,91 @@ export default function PixGatewayManager() {
             <strong>Webhook:</strong> URL{' '}
             <code className="bg-amber-100 px-1 rounded">https://seu-dominio.com/api/payments/webhook</code>
             . Inclua o evento <code className="bg-amber-100 px-1 rounded">pix.in.confirmation</code>.
+          </p>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 pt-10 space-y-4">
+        <h3 className="text-xl font-bold text-gray-900">SarrixPay</h3>
+        <p className="text-gray-600 text-sm max-w-2xl">
+          API pública <code className="bg-gray-100 px-1 rounded text-xs">https://apiv1.sarrixpay.com</code>: obtenha{' '}
+          <code className="bg-gray-100 px-1 rounded text-xs">client_id</code> e{' '}
+          <code className="bg-gray-100 px-1 rounded text-xs">client_secret</code> no painel SarrixPay. Registre a URL de webhook no painel do cliente (não por requisição). Se o painel permitir um secret compartilhado, use o mesmo valor em{' '}
+          <code className="bg-gray-100 px-1 rounded text-xs">WEBHOOK_SECRET</code> no servidor.
+        </p>
+
+        {sarrixLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900" />
+          </div>
+        ) : (
+          <form onSubmit={saveSarrix} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-xl">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Base URL da API</label>
+                <input
+                  type="url"
+                  value={sarrixBaseUrl}
+                  onChange={(e) => setSarrixBaseUrl(e.target.value)}
+                  placeholder="https://apiv1.sarrixpay.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
+                <input
+                  type="text"
+                  value={sarrixClientId}
+                  onChange={(e) => setSarrixClientId(e.target.value)}
+                  placeholder="UUID do integrador"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client Secret</label>
+                <div className="relative">
+                  <input
+                    type={showSarrixSecret ? 'text' : 'password'}
+                    value={sarrixSecret}
+                    onChange={(e) => setSarrixSecret(e.target.value)}
+                    placeholder="cs_live_…"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSarrixSecret((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    title={showSarrixSecret ? 'Ocultar' : 'Mostrar'}
+                  >
+                    {showSarrixSecret ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+            {sarrixMessage && (
+              <p className={`mt-4 text-sm ${sarrixMessage.startsWith('Erro') ? 'text-red-600' : 'text-green-600'}`}>
+                {sarrixMessage}
+              </p>
+            )}
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={sarrixSaving || !sarrixClientId.trim() || !sarrixSecret.trim()}
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Save size={18} />
+                {sarrixSaving ? 'Salvando...' : 'Salvar SarrixPay'}
+              </button>
+              {sarrixSaved && <span className="text-green-600 text-sm font-medium">Salvo!</span>}
+            </div>
+          </form>
+        )}
+
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-xl">
+          <p className="text-sm text-amber-800">
+            <strong>Webhook SarrixPay:</strong> mesma URL{' '}
+            <code className="bg-amber-100 px-1 rounded">/api/payments/webhook</code>. O sistema confirma pagamentos com o evento{' '}
+            <code className="bg-amber-100 px-1 rounded">pix_in.succeeded</code>.
           </p>
         </div>
       </div>

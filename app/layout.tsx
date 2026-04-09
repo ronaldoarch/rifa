@@ -24,13 +24,29 @@ async function getPlatformName(): Promise<string> {
   }
 }
 
+async function getLogoUrl(): Promise<string | null> {
+  try {
+    const c = await prisma.config.findUnique({ where: { key: 'LOGO_URL' } })
+    const v = c?.value?.trim()
+    return v || null
+  } catch {
+    return null
+  }
+}
+
 export async function generateMetadata(): Promise<Metadata> {
-  const platformName = await getPlatformName()
-  return {
+  const [platformName, logoUrl] = await Promise.all([getPlatformName(), getLogoUrl()])
+  const base: Metadata = {
     title: `${platformName} - 5 Milhões em Prêmios`,
     description: 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
-    manifest: '/manifest.json',
   }
+  if (logoUrl) {
+    base.icons = {
+      icon: [{ url: logoUrl }],
+      apple: [{ url: logoUrl }],
+    }
+  }
+  return base
 }
 
 export default function RootLayout({
