@@ -8,7 +8,12 @@ export async function GET(request: NextRequest) {
   try {
     const configs = await prisma.config.findMany()
     const configMap: Record<string, string> = {}
-    const SENSITIVE_KEYS = ['XGATE_PASSWORD', 'GATEBOX_PASSWORD', 'WEBHOOK_SECRET']
+    const SENSITIVE_KEYS = [
+      'XGATE_PASSWORD',
+      'GATEBOX_PASSWORD',
+      'CYBER_PAYMENT_API_KEY',
+      'WEBHOOK_SECRET',
+    ]
 
     configs.forEach((config) => {
       configMap[config.key] = SENSITIVE_KEYS.includes(config.key)

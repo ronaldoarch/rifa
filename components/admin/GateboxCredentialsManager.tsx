@@ -41,7 +41,7 @@ export default function GateboxCredentialsManager() {
       })
       if (res.ok) {
         setSaved(true)
-        setMessage('Credenciais salvas. Os pagamentos PIX usarão o gateway Gatebox.')
+        setMessage('Credenciais Gatebox salvas. Ative "Gatebox" em Gateway PIX para usar na compra.')
         setTimeout(() => { setSaved(false); setMessage('') }, 5000)
       } else {
         const data = await res.json().catch(() => ({}))
