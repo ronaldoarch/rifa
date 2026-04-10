@@ -17,6 +17,17 @@ const nextConfig = {
     output: 'export',
     trailingSlash: true,
   }),
+  // /uploads/* passa pela app (Node) em vez de depender só do static handler do standalone
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/uploads/:folder/:file',
+          destination: '/api/uploads/:folder/:file',
+        },
+      ],
+    }
+  },
 }
 
 module.exports = nextConfig

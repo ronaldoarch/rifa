@@ -58,6 +58,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modul
 # Verify server.js exists
 RUN ls -la server.js || (echo "ERROR: server.js not found!" && exit 1)
 
+# Uploads (logo, banners, etc.): diretório gravável. Em Coolify, mapeie volume persistente em
+# /app/public/uploads para não perder ficheiros a cada redeploy (senão o browser recebe 404).
+RUN mkdir -p /app/public/uploads/logo /app/public/uploads/banner /app/public/uploads/raffle /app/public/uploads/showcase
+
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app
 
