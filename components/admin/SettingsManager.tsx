@@ -53,13 +53,44 @@ export default function SettingsManager() {
         body: form,
         credentials: 'include',
       })
-      const data = await res.json()
+      const raw = await res.text()
+      let data: { url?: string; error?: string } = {}
+      try {
+        data = raw ? (JSON.parse(raw) as { url?: string; error?: string }) : {}
+      } catch {
+        if (res.status === 413 || /too large|Request Entity Too Large/i.test(raw)) {
+          toast.error(
+            `Arquivo ou requisição muito grande (limite do app: ${UPLOAD_MAX_IMAGE_MB} MB). Se usar proxy/nginx, aumente client_max_body_size.`
+          )
+        } else {
+          toast.error(`Erro ${res.status} no servidor. Tente uma imagem menor ou outro formato.`)
+        }
+        return
+      }
       if (res.status === 401 || res.status === 403) {
         toast.error('Faça login como administrador para enviar arquivos.')
         return
       }
-      if (data.url) setConfig((c) => ({ ...c, logoUrl: data.url }))
-      else toast.error(data.error || 'Erro no upload')
+      if (data.url) {
+        setConfig((c) => ({ ...c, logoUrl: data.url! }))
+        const saveRes = await fetch('/api/admin/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ LOGO_URL: data.url }),
+        })
+        if (saveRes.ok) {
+          toast.success('Logo enviada e salva. Já aparece no site.')
+        } else {
+          const err = await saveRes.json().catch(() => ({}))
+          toast.error(
+            (err as { error?: string }).error ||
+              'Upload OK, mas falhou ao salvar LOGO_URL. Clique em Salvar configurações.'
+          )
+        }
+      } else {
+        toast.error(data.error || 'Erro no upload')
+      }
     } catch {
       toast.error('Erro ao enviar logo')
     } finally {
@@ -180,7 +211,7 @@ export default function SettingsManager() {
                   <img
                     src={config.logoUrl}
                     alt="Logo"
-                    className="h-16 object-contain border border-gray-200 rounded"
+                    className="h-16 max-h-24 w-auto max-w-[min(100%,280px)] object-contain border border-gray-200 rounded"
                   />
                   <button
                     type="button"
