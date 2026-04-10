@@ -1,5 +1,5 @@
 /** Limites alinhados com `app/api/upload/route.ts` (imagens banner, logo, rifa). */
-export const UPLOAD_MAX_IMAGE_BYTES = 15 * 1024 * 1024 // 15MB
+export const UPLOAD_MAX_IMAGE_BYTES = 32 * 1024 * 1024 // 32MB (logos/banners em alta resolução)
 export const UPLOAD_MAX_IMAGE_MB = Math.round(UPLOAD_MAX_IMAGE_BYTES / 1024 / 1024)
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const
