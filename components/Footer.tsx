@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Instagram, Facebook, Youtube, ShieldCheck } from 'lucide-react'
+import { fetchSiteConfigJson } from '@/lib/site-config-fetch'
 
 export default function Footer() {
   const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
   const [safeBrowsing, setSafeBrowsing] = useState<{ safe: boolean | null; checked: boolean } | null>(null)
 
   useEffect(() => {
-    fetch('/api/site-config')
+    fetchSiteConfigJson()
       .then((res) => res.json())
       .then((data) => {
-        if (data.platformName) setPlatformName(data.platformName)
+        if (typeof data.platformName === 'string') setPlatformName(data.platformName)
       })
       .catch(() => {})
   }, [])
