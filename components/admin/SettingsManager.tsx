@@ -111,11 +111,16 @@ export default function SettingsManager() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/admin/config')
+      const response = await fetch('/api/admin/config', {
+        cache: 'no-store',
+        credentials: 'include',
+      })
       const data = await response.json()
       setConfig({
-        platformName: data.PLATFORM_NAME || 'PIX DO JONATHAN',
-        scrollBannerText: data.SCROLL_BANNER_TEXT || 'CONCORRA A 10 MIL REAIS HOJE!',
+        platformName:
+          data.PLATFORM_NAME !== undefined ? data.PLATFORM_NAME : 'PIX DO JONATHAN',
+        scrollBannerText:
+          data.SCROLL_BANNER_TEXT !== undefined ? data.SCROLL_BANNER_TEXT : 'CONCORRA A 10 MIL REAIS HOJE!',
         gtmId: data.GTM_ID || '',
         metaPixelId: data.META_PIXEL_ID || '',
         whatsapp: data.WHATSAPP || '',
@@ -124,11 +129,17 @@ export default function SettingsManager() {
         textColor: data.TEXT_COLOR || '#111827',
         backgroundColor: data.BACKGROUND_COLOR || '#ffffff',
         principalRaffleId: data.PRINCIPAL_RAFFLE_ID || '',
-        heroTitle: data.HERO_TITLE || '5 MILHÕES',
-        heroSubtitle: data.HERO_SUBTITLE || 'EM PRÊMIOS',
-        heroDescription: data.HERO_DESCRIPTION || 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
+        heroTitle: data.HERO_TITLE !== undefined ? data.HERO_TITLE : '5 MILHÕES',
+        heroSubtitle: data.HERO_SUBTITLE !== undefined ? data.HERO_SUBTITLE : 'EM PRÊMIOS',
+        heroDescription:
+          data.HERO_DESCRIPTION !== undefined
+            ? data.HERO_DESCRIPTION
+            : 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
         logoUrl: data.LOGO_URL || '',
-        dailyPrizesSectionTitle: data.DAILY_PRIZES_SECTION_TITLE || 'Premios todos os dias',
+        dailyPrizesSectionTitle:
+          data.DAILY_PRIZES_SECTION_TITLE !== undefined
+            ? data.DAILY_PRIZES_SECTION_TITLE
+            : 'Premios todos os dias',
       })
     } catch (error) {
       console.error('Error fetching config:', error)
@@ -165,7 +176,11 @@ export default function SettingsManager() {
       if (response.ok) {
         setSaved(true)
         toast.success('Configurações salvas com sucesso!')
+        await fetchConfig()
         setTimeout(() => setSaved(false), 3000)
+      } else {
+        const err = await response.json().catch(() => ({}))
+        toast.error((err as { error?: string }).error || 'Erro ao salvar')
       }
     } catch (error) {
       console.error('Error saving config:', error)

@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect } from 'react'
+import { fetchSiteConfigJson } from '@/lib/site-config-fetch'
 
 export default function ThemeInjector() {
   useEffect(() => {
-    fetch('/api/site-config')
+    fetchSiteConfigJson()
       .then((res) => res.json())
       .then((data) => {
         const root = document.documentElement

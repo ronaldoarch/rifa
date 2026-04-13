@@ -1,22 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { fetchSiteConfigJson } from '@/lib/site-config-fetch'
 
 const DEFAULT_TEXT = 'CONCORRA A 10 MIL REAIS HOJE!'
 
 export default function ScrollBanner() {
-  const [text, setText] = useState(DEFAULT_TEXT)
+  /** null = a carregar; string vazia = admin limpou a faixa (não mostrar) */
+  const [text, setText] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/site-config')
+    fetchSiteConfigJson()
       .then((res) => res.json())
       .then((data) => {
-        if (data.scrollBannerText && data.scrollBannerText.trim()) {
+        if (typeof data.scrollBannerText === 'string') {
           setText(data.scrollBannerText.trim())
+        } else {
+          setText(DEFAULT_TEXT)
         }
       })
-      .catch(() => {})
+      .catch(() => setText(DEFAULT_TEXT))
   }, [])
+
+  if (text === null || text === '') {
+    return null
+  }
 
   const repeatText = `${text} • `.repeat(10)
 

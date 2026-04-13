@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import PurchaseBox, { type PrincipalRaffle } from './PurchaseBox'
+import { fetchSiteConfigJson } from '@/lib/site-config-fetch'
 
 interface Banner {
   id: string
@@ -18,9 +19,9 @@ export default function HeroBanner() {
   const [principalRaffle, setPrincipalRaffle] = useState<PrincipalRaffle | null | undefined>(undefined)
   const [banners, setBanners] = useState<Banner[]>([])
   const [heroText, setHeroText] = useState({
-    title: '5 MILHÕES',
-    subtitle: 'EM PRÊMIOS',
-    description: 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
+    title: '',
+    subtitle: '',
+    description: '',
   })
 
   useEffect(() => {
@@ -31,13 +32,13 @@ export default function HeroBanner() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/site-config')
+    fetchSiteConfigJson()
       .then((res) => res.json())
       .then((data) => {
         setHeroText({
-          title: data.heroTitle || '5 MILHÕES',
-          subtitle: data.heroSubtitle || 'EM PRÊMIOS',
-          description: data.heroDescription || 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
+          title: typeof data.heroTitle === 'string' ? data.heroTitle : '',
+          subtitle: typeof data.heroSubtitle === 'string' ? data.heroSubtitle : '',
+          description: typeof data.heroDescription === 'string' ? data.heroDescription : '',
         })
       })
       .catch(() => {})
@@ -104,19 +105,25 @@ export default function HeroBanner() {
               />
             )}
             <div className="relative z-10">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-yellow-400 mb-3 md:mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                {heroText.title}
-              </h1>
-              <div className="flex items-center justify-center md:justify-start mb-4 md:mb-6">
-                <div className="h-1 w-8 sm:w-12 bg-yellow-400 mr-2 sm:mr-4"></div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                  {heroText.subtitle}
-                </h2>
-                <div className="h-1 w-8 sm:w-12 bg-yellow-400 ml-2 sm:ml-4"></div>
-              </div>
-              <p className="text-base sm:text-lg md:text-xl text-white mb-6 md:mb-8 px-2 sm:px-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
-                {heroText.description}
-              </p>
+              {heroText.title.trim() ? (
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-yellow-400 mb-3 md:mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  {heroText.title}
+                </h1>
+              ) : null}
+              {heroText.subtitle.trim() ? (
+                <div className="flex items-center justify-center md:justify-start mb-4 md:mb-6">
+                  <div className="h-1 w-8 sm:w-12 bg-yellow-400 mr-2 sm:mr-4"></div>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                    {heroText.subtitle}
+                  </h2>
+                  <div className="h-1 w-8 sm:w-12 bg-yellow-400 ml-2 sm:ml-4"></div>
+                </div>
+              ) : null}
+              {heroText.description.trim() ? (
+                <p className="text-base sm:text-lg md:text-xl text-white mb-6 md:mb-8 px-2 sm:px-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                  {heroText.description}
+                </p>
+              ) : null}
             </div>
           </div>
 
