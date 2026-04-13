@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { User, Menu, X } from 'lucide-react'
+import { fetchSiteConfigJson } from '@/lib/site-config-fetch'
 
 export default function Header() {
   const pathname = usePathname()
@@ -15,11 +16,11 @@ export default function Header() {
   useEffect(() => setMenuOpen(false), [pathname])
 
   useEffect(() => {
-    fetch('/api/site-config')
+    fetchSiteConfigJson()
       .then((res) => res.json())
       .then((data) => {
-        if (data.platformName) setPlatformName(data.platformName)
-        if (data.logoUrl) setLogoUrl(data.logoUrl)
+        if (typeof data.platformName === 'string') setPlatformName(data.platformName)
+        setLogoUrl(typeof data.logoUrl === 'string' && data.logoUrl ? data.logoUrl : null)
       })
       .catch(() => {})
   }, [])

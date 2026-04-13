@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { fetchSiteConfigJson } from '@/lib/site-config-fetch'
 
 interface ShowcaseItem {
   id: string
@@ -13,29 +14,38 @@ interface ShowcaseItem {
 }
 
 export default function WinnersSection() {
-  const [sectionTitle, setSectionTitle] = useState('Premios todos os dias')
+  const [sectionTitle, setSectionTitle] = useState<string | null>(null)
   const [items, setItems] = useState<ShowcaseItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/site-config').then((r) => r.json()),
-      fetch('/api/showcase').then((r) => r.json()),
+      fetchSiteConfigJson().then((r) => r.json()),
+      fetch('/api/showcase', { cache: 'no-store' }).then((r) => r.json()),
     ])
       .then(([config, list]) => {
-        setSectionTitle(config.dailyPrizesSectionTitle || 'Premios todos os dias')
+        setSectionTitle(
+          typeof config.dailyPrizesSectionTitle === 'string'
+            ? config.dailyPrizesSectionTitle
+            : 'Premios todos os dias'
+        )
         setItems(Array.isArray(list) ? list : [])
       })
-      .catch(() => {})
+      .catch(() => {
+        setSectionTitle('Premios todos os dias')
+        setItems([])
+      })
       .finally(() => setLoading(false))
   }, [])
 
   return (
     <div className="bg-gray-50 py-8 sm:py-12 text-gray-900">
       <div className="container mx-auto px-4">
-        <h3 className="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8 text-gray-900">
-          {sectionTitle}
-        </h3>
+        {sectionTitle !== null && sectionTitle.trim() !== '' ? (
+          <h3 className="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8 text-gray-900">
+            {sectionTitle}
+          </h3>
+        ) : null}
 
         {loading ? (
           <div className="flex justify-center py-12">

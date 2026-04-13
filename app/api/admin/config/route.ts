@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-admin'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+const NO_STORE = {
+  'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate',
+}
+
 export async function GET(request: NextRequest) {
   const authError = await requireAdmin(request)
   if (authError) return authError
@@ -22,12 +29,12 @@ export async function GET(request: NextRequest) {
         : config.value
     })
 
-    return NextResponse.json(configMap)
+    return NextResponse.json(configMap, { headers: NO_STORE })
   } catch (error) {
     console.error('Error fetching config:', error)
     return NextResponse.json(
       { error: 'Erro ao buscar configurações' },
-      { status: 500 }
+      { status: 500, headers: NO_STORE }
     )
   }
 }
