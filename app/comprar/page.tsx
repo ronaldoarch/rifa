@@ -28,6 +28,8 @@ function PurchaseContent() {
   const [maxQty, setMaxQty] = useState(MAX_QUANTITY_PER_PURCHASE)
   const [availableTickets, setAvailableTickets] = useState<number | null>(null)
   const [raffleLoadState, setRaffleLoadState] = useState<RaffleLoadState>('loading')
+  const [raffleTitle, setRaffleTitle] = useState('')
+  const [raffleImageUrl, setRaffleImageUrl] = useState<string | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Stop polling on unmount
@@ -61,6 +63,8 @@ function PurchaseContent() {
           setRaffleLoadState('error')
           return
         }
+        setRaffleTitle(typeof data.title === 'string' ? data.title : '')
+        setRaffleImageUrl(typeof data.imageUrl === 'string' && data.imageUrl.trim() ? data.imageUrl.trim() : null)
         if (!fromUrl) setRaffleId(data.id)
         const price = Number(data.ticketPrice)
         if (!Number.isFinite(price) || price <= 0) {
@@ -210,7 +214,18 @@ function PurchaseContent() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Left side - Purchase details */}
             <div className="space-y-6">
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 rounded-lg overflow-hidden">
+                {raffleLoadState === 'ready' && raffleImageUrl && (
+                  <div className="relative w-full aspect-[16/10] bg-gray-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- URL dinâmica (admin/uploads) */}
+                    <img
+                      src={raffleImageUrl}
+                      alt={raffleTitle || 'Rifa'}
+                      className="absolute inset-0 h-full w-full object-cover object-center"
+                    />
+                  </div>
+                )}
+                <div className="p-6">
                 <h2 className="text-xl font-bold mb-4 text-gray-900">Resumo da Compra</h2>
 
                 {raffleLoadState === 'loading' && (
@@ -288,6 +303,7 @@ function PurchaseContent() {
                         : '—'}
                     </span>
                   </div>
+                </div>
                 </div>
               </div>
 

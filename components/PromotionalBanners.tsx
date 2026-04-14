@@ -101,10 +101,28 @@ export default function PromotionalBanners() {
           return (
             <div
               key={raffle.id}
-              className="bg-white border-2 border-gray-200 rounded-lg p-4 sm:p-6 shadow-lg text-gray-900"
+              className="bg-white border-2 border-gray-200 rounded-lg shadow-lg text-gray-900 overflow-hidden flex flex-col h-full"
             >
-              <div className="text-center mb-4 sm:mb-6">
-                <div className="text-3xl sm:text-4xl mb-2">🎉</div>
+              <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-gray-100 shrink-0">
+                {raffle.imageUrl?.trim() ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- URL dinâmica (admin/uploads)
+                  <img
+                    src={raffle.imageUrl.trim()}
+                    alt={raffle.title}
+                    className="absolute inset-0 h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center text-5xl sm:text-6xl bg-gradient-to-br from-green-50 to-gray-100"
+                    aria-hidden
+                  >
+                    🎉
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center p-4 sm:p-6 flex-1 flex flex-col">
                 <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">{raffle.title}</h3>
                 <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 line-clamp-2">
                   {raffle.description || 'Participe e concorra a prêmios.'}
@@ -122,9 +140,8 @@ export default function PromotionalBanners() {
                     Valor mínimo de compra: {formatCurrency(raffle.minPurchaseAmount)}
                   </p>
                 )}
-              </div>
 
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3 sm:mb-4 mt-auto">
                 {QUICK_QUANTITIES.map((n) => {
                   const effectiveQty = Math.max(n, minQty)
                   return (
@@ -142,9 +159,9 @@ export default function PromotionalBanners() {
                     </button>
                   )
                 })}
-              </div>
+                </div>
 
-              <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
+                <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
                 <button
                   type="button"
                   onClick={() => setQuantity(raffle, qty - 1)}
@@ -163,14 +180,15 @@ export default function PromotionalBanners() {
                 >
                   <span className="text-lg sm:text-xl font-bold">+</span>
                 </button>
-              </div>
+                </div>
 
-              <Link
-                href={buyHref}
-                className="block w-full bg-green-600 text-white py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-green-500 transition-colors text-center"
-              >
-                COMPRAR – {formatCurrency(totalPrice)}
-              </Link>
+                <Link
+                  href={buyHref}
+                  className="block w-full bg-green-600 text-white py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-green-500 transition-colors text-center"
+                >
+                  COMPRAR – {formatCurrency(totalPrice)}
+                </Link>
+              </div>
             </div>
           )
         })}
