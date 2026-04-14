@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyWebhookSignature } from '@/lib/webhook-verify'
+import { verifyWebhookAuth } from '@/lib/webhook-verify'
 
 /**
  * Webhook para confirmação de PIX (SarrixPay, Cyber Payment, XGate, Gatebox ou genérico).
  * Configure no painel: https://seu-dominio.com/api/payments/webhook
  * (SarrixPay também aceita o alias /api/webhooks/sarrix — mesmo handler.)
  *
- * Segurança: defina WEBHOOK_SECRET no .env. O gateway deve enviar:
- * - X-Webhook-Secret: valor igual ao WEBHOOK_SECRET (token fixo), ou
- * - X-Webhook-Signature: HMAC-SHA256 do body usando WEBHOOK_SECRET
+ * Segurança: defina WEBHOOK_SECRET no .env. Formas aceites:
+ * - X-Webhook-Secret, X-Webhook-Signature (HMAC do body), Authorization: Bearer, ou ?token= na URL
+ * - Se o painel Sarrix não enviar headers: WEBHOOK_SARRIX_ALLOW_UNSIGNED=true (menos seguro) ou URL com ?token=SECRET
  *
  * XGate: a documentação não cita assinatura. Configure o mesmo secret no painel XGate se disponível,
  * ou use um proxy que adicione o header. Em produção, WEBHOOK_SECRET é obrigatório.
@@ -23,8 +23,24 @@ export async function POST(request: NextRequest) {
 
     const secret = process.env.WEBHOOK_SECRET
     if (secret) {
-      const isValid = verifyWebhookSignature(rawBody, secret, request.headers)
-      if (!isValid) {
+      let ok = verifyWebhookAuth(request, rawBody, secret)
+      const eventStrForAuth =
+        typeof body.event === 'string'
+          ? body.event
+          : body.data && typeof body.data === 'object' && typeof (body.data as { event?: unknown }).event === 'string'
+            ? String((body.data as { event: string }).event)
+            : ''
+      if (
+        !ok &&
+        process.env.WEBHOOK_SARRIX_ALLOW_UNSIGNED === 'true' &&
+        eventStrForAuth.toLowerCase().includes('pix')
+      ) {
+        ok = true
+        console.warn(
+          '[webhook] Sarrix/PIX aceito sem assinatura (WEBHOOK_SARRIX_ALLOW_UNSIGNED). Configure header ou URL com token em produção.'
+        )
+      }
+      if (!ok) {
         console.error('Webhook: assinatura inválida ou ausente')
         return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 })
       }
@@ -121,44 +137,103 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, status: 'paid' })
     }
 
-    // SarrixPay Enterprise: { event: "pix_in.succeeded", status, transaction: { id, direction, ... }, reference }
-    const sarrixEvent = typeof body.event === 'string' ? body.event : ''
-    if (sarrixEvent === 'pix_in.succeeded') {
-      const st = typeof body.status === 'string' ? body.status : ''
-      if (st && st !== 'succeeded') {
-        return NextResponse.json({ ok: true, message: 'Evento ignorado (status não succeeded)' })
+    // SarrixPay Enterprise: event "pix_in.succeeded", transaction { id }, reference = idempotency (paymentId)
+    const sarrixEventRaw =
+      typeof body.event === 'string'
+        ? body.event.trim()
+        : body.data && typeof body.data === 'object' && typeof (body.data as { event?: unknown }).event === 'string'
+          ? String((body.data as { event: string }).event).trim()
+          : ''
+    const sarrixNorm = sarrixEventRaw.toLowerCase().replace(/-/g, '_')
+    const isSarrixPixInSuccess =
+      sarrixNorm === 'pix_in.succeeded' ||
+      (sarrixNorm.includes('pix_in') && sarrixNorm.includes('succeed'))
+
+    if (isSarrixPixInSuccess) {
+      const st = typeof body.status === 'string' ? body.status.toLowerCase() : ''
+      if (st && ['failed', 'error', 'canceled', 'cancelled', 'rejected', 'refunded'].includes(st)) {
+        return NextResponse.json({ ok: true, message: 'Evento ignorado (status de falha)' })
       }
 
-      const txObj = body.transaction
-      if (!txObj || typeof txObj !== 'object') {
+      let txObj: Record<string, unknown> | null =
+        body.transaction && typeof body.transaction === 'object'
+          ? (body.transaction as Record<string, unknown>)
+          : body.data && typeof body.data === 'object' && typeof (body.data as { transaction?: unknown }).transaction === 'object'
+            ? (body.data as { transaction: Record<string, unknown> }).transaction
+            : null
+
+      if (!txObj && isSarrixPixInSuccess) {
+        const refs = [
+          body.reference,
+          body.idempotency_key,
+          body.data && typeof body.data === 'object' ? (body.data as Record<string, unknown>).reference : undefined,
+        ]
+        for (const r of refs) {
+          if (r == null || String(r).trim() === '') continue
+          const ref = String(r).trim()
+          const p = await prisma.payment.findUnique({ where: { id: ref } })
+          if (p) {
+            txObj = { id: p.transactionId ?? ref, reference: ref }
+            break
+          }
+        }
+      }
+
+      if (!txObj) {
         return NextResponse.json({ error: 'SarrixPay: transaction ausente' }, { status: 400 })
       }
-      const tx = txObj as Record<string, unknown>
-      const txId = typeof tx.id === 'string' ? tx.id : ''
-      if (!txId) {
-        return NextResponse.json({ error: 'SarrixPay: transaction.id ausente' }, { status: 400 })
+
+      const rawTxId = txObj.id ?? txObj.transaction_id ?? body.transaction_id
+      const txId = rawTxId != null && String(rawTxId).trim() !== '' ? String(rawTxId).trim() : ''
+
+      const refCandidates: string[] = []
+      for (const v of [
+        body.reference,
+        body.idempotency_key,
+        (body.data as Record<string, unknown> | undefined)?.reference,
+        txObj.reference,
+        txObj.idempotency_key,
+      ]) {
+        if (v != null && String(v).trim() !== '') refCandidates.push(String(v).trim())
       }
 
+      let payment = txId
+        ? await prisma.payment.findFirst({ where: { transactionId: txId } })
+        : null
+      if (!payment) {
+        for (const ref of refCandidates) {
+          const byId = await prisma.payment.findUnique({ where: { id: ref } })
+          if (byId) {
+            payment = byId
+            break
+          }
+          const byTid = await prisma.payment.findFirst({ where: { transactionId: ref } })
+          if (byTid) {
+            payment = byTid
+            break
+          }
+        }
+      }
+
+      if (!payment) {
+        return NextResponse.json(
+          { error: 'Pagamento não encontrado para esta transação SarrixPay (id/reference)' },
+          { status: 404 }
+        )
+      }
+
+      const dedupeId = txId || payment.id
       const existing = await prisma.webhookProcessed.findUnique({
-        where: { source_transactionId: { source: 'sarrix', transactionId: txId } },
+        where: { source_transactionId: { source: 'sarrix', transactionId: dedupeId } },
       })
       if (existing) {
         return NextResponse.json({ ok: true, message: 'Já processado' })
       }
 
-      const payment = await prisma.payment.findFirst({
-        where: { transactionId: txId },
-      })
-      if (!payment) {
-        return NextResponse.json(
-          { error: 'Pagamento não encontrado para esta transação SarrixPay' },
-          { status: 404 }
-        )
-      }
       if (payment.status === 'paid') {
         await prisma.webhookProcessed.upsert({
-          where: { source_transactionId: { source: 'sarrix', transactionId: txId } },
-          create: { source: 'sarrix', transactionId: txId, paymentId: payment.id },
+          where: { source_transactionId: { source: 'sarrix', transactionId: dedupeId } },
+          create: { source: 'sarrix', transactionId: dedupeId, paymentId: payment.id },
           update: {},
         })
         return NextResponse.json({ ok: true, message: 'Já estava pago' })
@@ -167,11 +242,14 @@ export async function POST(request: NextRequest) {
       try {
         await prisma.$transaction([
           prisma.webhookProcessed.create({
-            data: { source: 'sarrix', transactionId: txId, paymentId: payment.id },
+            data: { source: 'sarrix', transactionId: dedupeId, paymentId: payment.id },
           }),
           prisma.payment.update({
             where: { id: payment.id },
-            data: { status: 'paid' },
+            data: {
+              status: 'paid',
+              ...(txId && payment.transactionId !== txId ? { transactionId: txId } : {}),
+            },
           }),
         ])
       } catch (e) {

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto'
+import type { NextRequest } from 'next/server'
 
 /**
  * Verifica a assinatura do webhook.
@@ -36,6 +37,48 @@ export function verifyWebhookSignature(
     } catch {
       return false
     }
+  }
+
+  return false
+}
+
+function timingSafeEqualString(a: string, b: string): boolean {
+  const x = Buffer.from(a, 'utf8')
+  const y = Buffer.from(b, 'utf8')
+  if (x.length !== y.length) return false
+  try {
+    return timingSafeEqual(x, y)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Igual a verifyWebhookSignature, mais formas comuns em painéis de gateway:
+ * - Authorization: Bearer &lt;WEBHOOK_SECRET&gt;
+ * - Query ?token= / ?secret= / ?key= (alguns provedores só permitem URL fixa)
+ */
+export function verifyWebhookAuth(
+  request: NextRequest,
+  rawBody: string,
+  secret: string
+): boolean {
+  if (verifyWebhookSignature(rawBody, secret, request.headers)) return true
+
+  const auth = request.headers.get('authorization')
+  if (auth?.toLowerCase().startsWith('bearer ')) {
+    const token = auth.slice(7).trim()
+    if (timingSafeEqualString(secret, token)) return true
+  }
+
+  try {
+    const url = new URL(request.url)
+    for (const key of ['token', 'secret', 'key']) {
+      const q = url.searchParams.get(key)
+      if (q && timingSafeEqualString(secret, q)) return true
+    }
+  } catch {
+    /* ignore */
   }
 
   return false
