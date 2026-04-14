@@ -5,7 +5,7 @@ import { verifyWebhookAuth } from '@/lib/webhook-verify'
 /**
  * Webhook para confirmação de PIX (SarrixPay, Cyber Payment, XGate, Gatebox ou genérico).
  * Configure no painel: https://seu-dominio.com/api/payments/webhook
- * (SarrixPay também aceita o alias /api/webhooks/sarrix — mesmo handler.)
+ * (SarrixPay: aliases /api/webhooks/sarrix e /webhooks/sarrix — mesmo handler.)
  *
  * Segurança: defina WEBHOOK_SECRET no .env. Formas aceites:
  * - X-Webhook-Secret, X-Webhook-Signature (HMAC do body), Authorization: Bearer, ou ?token= na URL
