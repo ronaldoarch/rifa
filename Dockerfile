@@ -17,7 +17,8 @@ RUN npm ci --include=dev
 
 # Rebuild the source code only when needed
 FROM base AS builder
-ARG NODE_MEMORY_LIMIT=4096
+# Coolify/servidores com pouca RAM: aumente no build (ex.: --build-arg NODE_MEMORY_LIMIT=8192)
+ARG NODE_MEMORY_LIMIT=8192
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 # Copy all source files including components
@@ -27,17 +28,14 @@ RUN ls -la components/ || echo "Components directory check"
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
-# Next.js 15 em Docker costuma falhar em "Collecting build traces" com OOM em hosts com pouca RAM.
-# Ajuste no Coolify/Docker se ainda falhar (ex.: mais RAM ao builder ou aumentar para 8192).
+# Next.js 15 em Docker costuma falhar em "Linting" / "Collecting build traces" com OOM em hosts com pouca RAM.
 ENV NODE_OPTIONS="--max-old-space-size=${NODE_MEMORY_LIMIT}"
 # Don't set NODE_ENV=production during build to allow devDependencies
 # ENV NODE_ENV=production
 
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Build Next.js
-RUN npm run build
+# Prisma + Next (sem `npm run build` para evitar prisma generate duplicado).
+# --no-lint reduz RAM/tempo no builder; rode `npm run lint` no CI ou localmente antes do deploy.
+RUN npx prisma generate && npx next build --no-lint
 
 # Production image, copy all the files and run next
 FROM base AS runner
