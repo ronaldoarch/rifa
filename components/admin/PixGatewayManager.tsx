@@ -282,8 +282,8 @@ export default function PixGatewayManager() {
         <p className="text-gray-600 text-sm max-w-2xl">
           API pública <code className="bg-gray-100 px-1 rounded text-xs">https://apiv1.sarrixpay.com</code>: obtenha{' '}
           <code className="bg-gray-100 px-1 rounded text-xs">client_id</code> e{' '}
-          <code className="bg-gray-100 px-1 rounded text-xs">client_secret</code> no painel SarrixPay. Registre a URL de webhook no painel do cliente (não por requisição). Se o painel permitir um secret compartilhado, use o mesmo valor em{' '}
-          <code className="bg-gray-100 px-1 rounded text-xs">WEBHOOK_SECRET</code> no servidor.
+          <code className="bg-gray-100 px-1 rounded text-xs">client_secret</code> no painel SarrixPay.           Registre a URL de webhook no painel (não por requisição). Não é obrigatório configurar{' '}
+          <code className="bg-gray-100 px-1 rounded text-xs">WEBHOOK_SECRET</code> — só use se o painel permitir token/assinatura e quiser validar o POST.
         </p>
 
         {sarrixLoading ? (

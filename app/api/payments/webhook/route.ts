@@ -7,12 +7,11 @@ import { verifyWebhookAuth } from '@/lib/webhook-verify'
  * Configure no painel: https://seu-dominio.com/api/payments/webhook
  * (SarrixPay: aliases /api/webhooks/sarrix e /webhooks/sarrix — mesmo handler.)
  *
- * Segurança: defina WEBHOOK_SECRET no .env. Formas aceites:
- * - X-Webhook-Secret, X-Webhook-Signature (HMAC do body), Authorization: Bearer, ou ?token= na URL
- * - Se o painel Sarrix não enviar headers: WEBHOOK_SARRIX_ALLOW_UNSIGNED=true (menos seguro) ou URL com ?token=SECRET
- *
- * XGate: a documentação não cita assinatura. Configure o mesmo secret no painel XGate se disponível,
- * ou use um proxy que adicione o header. Em produção, WEBHOOK_SECRET é obrigatório.
+ * Segurança (opcional): se WEBHOOK_SECRET estiver definido, o POST deve provar o segredo via
+ * X-Webhook-Secret, X-Webhook-Signature (HMAC do body), Authorization: Bearer ou ?token= na URL.
+ * Sem WEBHOOK_SECRET, o endpoint aceita o body (gateways como SarrixPay costumam não permitir secret);
+ * nesse caso proteja por firewall/reverse proxy se possível.
+ * Se WEBHOOK_SECRET existir mas o gateway não enviar assinatura (ex.: Sarrix), use WEBHOOK_SARRIX_ALLOW_UNSIGNED=true.
  *
  * Idempotência: evita processar o mesmo pagamento duas vezes (retry do gateway).
  */
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text()
     const body = JSON.parse(rawBody || '{}') as Record<string, unknown>
 
-    const secret = process.env.WEBHOOK_SECRET
+    const secret = process.env.WEBHOOK_SECRET?.trim()
     if (secret) {
       let ok = verifyWebhookAuth(request, rawBody, secret)
       const eventStrForAuth =
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
       ) {
         ok = true
         console.warn(
-          '[webhook] Sarrix/PIX aceito sem assinatura (WEBHOOK_SARRIX_ALLOW_UNSIGNED). Configure header ou URL com token em produção.'
+          '[webhook] Sarrix/PIX aceito sem assinatura (WEBHOOK_SARRIX_ALLOW_UNSIGNED).'
         )
       }
       if (!ok) {
@@ -45,13 +44,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 })
       }
     } else if (process.env.NODE_ENV === 'production') {
-      console.error('Webhook: WEBHOOK_SECRET não configurado em produção')
-      return NextResponse.json(
-        { error: 'Webhook não configurado corretamente' },
-        { status: 500 }
+      console.warn(
+        '[webhook] WEBHOOK_SECRET não definido — webhook sem verificação de assinatura (comum com SarrixPay).'
       )
-    } else {
-      console.warn('Webhook: WEBHOOK_SECRET não definido (apenas em dev)')
     }
 
     // Cyber Payment: { id, type: "pix.in.confirmation", data: { transactionId, status, metadata } }

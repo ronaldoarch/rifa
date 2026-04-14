@@ -18,12 +18,9 @@ Se o login funciona mas o site volta ao login ao abrir `/admin`, a conta está a
 
 **Cookie em HTTPS:** em produção o cookie de sessão usa `Secure`. Se o deploy não tiver `NODE_ENV=production`, defina `COOKIE_SECURE=true` nas variáveis de ambiente.
 
-### 2. Variáveis de ambiente obrigatórias
+### 2. Webhook de pagamento (opcional)
 
-- **WEBHOOK_SECRET** (obrigatório em produção): secret compartilhado com o gateway PIX.
-  - O gateway deve enviar `X-Webhook-Secret` com o mesmo valor, ou
-  - `X-Webhook-Signature` com HMAC-SHA256 do body usando este secret.
-  - XGate: verifique no painel se há opção de configurar secret/token no webhook.
+- **WEBHOOK_SECRET** (opcional): se definido, o gateway deve enviar o mesmo valor em `X-Webhook-Secret`, `X-Webhook-Signature` (HMAC do body), `Authorization: Bearer`, ou na query `?token=`. Sem essa variável, o endpoint aceita o webhook sem verificação (comum com SarrixPay, que muitas vezes não permite configurar secret). Nesse cenário, restringir por firewall ou proxy é recomendável.
 
 ### 3. Banco de dados: PostgreSQL obrigatório
 
