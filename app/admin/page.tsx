@@ -182,8 +182,8 @@ export default function AdminPanel() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-dvh min-h-screen bg-gray-100">
-        <div className="flex min-h-0 w-full">
+      <div className="min-h-dvh min-h-screen bg-gray-100 md:h-dvh md:overflow-hidden md:flex md:flex-col">
+        <div className="flex w-full min-h-0 md:flex-1 md:min-h-0">
         {/* Top bar mobile: hamburger para abrir menu */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-gray-800 text-white flex items-center justify-between px-4 shadow">
           <button
@@ -213,9 +213,13 @@ export default function AdminPanel() {
           className={`
             w-64 max-w-[min(100vw,16rem)] bg-gray-800 text-white fixed left-0 top-0 z-50
             h-dvh max-h-dvh flex flex-col overflow-hidden
-            transform transition-transform duration-200 ease-out
-            md:translate-x-0 md:block
-            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            transform transition-transform duration-200 ease-out md:block
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            ${
+              sidebarOpen
+                ? 'pointer-events-auto'
+                : 'pointer-events-none md:pointer-events-auto'
+            }
           `}
         >
           <div className="p-6 flex items-center justify-between shrink-0 border-b border-gray-700/60">
@@ -232,7 +236,7 @@ export default function AdminPanel() {
               <X size={24} />
             </button>
           </div>
-          <nav className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y py-2 pb-6">
+          <nav className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain py-2 pb-6 md:touch-auto">
             {menuItems.map((item) => {
               const Icon = item.icon
               return (
@@ -251,14 +255,14 @@ export default function AdminPanel() {
           </nav>
         </aside>
 
-        {/* Main content: no mobile força scroll nesta coluna (flex + viewport fixa quebrava rolagem no iOS/Android) */}
+        {/* Main: no desktop scroll interno (altura fixa à viewport); no mobile rolagem da página */}
         <main
           className="
             flex-1 md:ml-64 pt-14 md:pt-0 p-4 sm:p-6 md:p-8 text-gray-900
-            min-w-0 min-h-0
-            overflow-x-hidden overflow-y-auto overscroll-y-contain touch-pan-y
-            max-h-[100dvh] md:max-h-none md:overflow-y-visible
-            pb-[max(1rem,env(safe-area-inset-bottom))]
+            min-w-0 relative z-0
+            overflow-x-hidden
+            pb-[max(1.5rem,env(safe-area-inset-bottom))]
+            md:min-h-0 md:h-full md:max-h-dvh md:overflow-y-auto md:overscroll-y-auto md:touch-auto
           "
         >
           {activeTab === 'dashboard' && (
