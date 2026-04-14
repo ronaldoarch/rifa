@@ -1,15 +1,18 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
+import { getPlatformName } from '@/lib/platform-name'
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const platformName = await getPlatformName()
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-grow">
-        <div className="bg-yellow-400 py-6 sm:py-8">
+        <div className="bg-site-primary py-6 sm:py-8">
           <div className="container mx-auto px-4">
-            <h1 className="text-2xl sm:text-4xl font-bold text-gray-800">O Pix do Jonathan</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">{platformName}</h1>
           </div>
         </div>
 

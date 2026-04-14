@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Save, Check, Upload, Image as ImageIcon } from 'lucide-react'
 import { UPLOAD_MAX_IMAGE_MB, validateClientImageUpload } from '@/lib/upload-limits'
+import { useSiteBootstrap, notifySiteConfigUpdated } from '@/components/SiteBootstrapProvider'
 
 export default function SettingsManager() {
+  const site = useSiteBootstrap()
   const [config, setConfig] = useState({
-    platformName: 'PIX DO JONATHAN',
-    scrollBannerText: 'CONCORRA A 10 MIL REAIS HOJE!',
+    platformName: site.platformName,
+    scrollBannerText: site.scrollBannerText,
     gtmId: '',
     metaPixelId: '',
     whatsapp: '',
@@ -80,6 +82,7 @@ export default function SettingsManager() {
           body: JSON.stringify({ LOGO_URL: data.url }),
         })
         if (saveRes.ok) {
+          notifySiteConfigUpdated()
           toast.success('Logo enviada e salva. Já aparece no site.')
         } else {
           const err = await saveRes.json().catch(() => ({}))
@@ -176,6 +179,7 @@ export default function SettingsManager() {
       if (response.ok) {
         setSaved(true)
         toast.success('Configurações salvas com sucesso!')
+        notifySiteConfigUpdated()
         await fetchConfig()
         setTimeout(() => setSaved(false), 3000)
       } else {
@@ -208,10 +212,11 @@ export default function SettingsManager() {
                 setConfig({ ...config, platformName: e.target.value })
               }
               className="w-full px-4 py-2 border rounded-lg text-gray-900"
-              placeholder="PIX DO JONATHAN"
+              placeholder="Ex.: Brasil da Sorte"
             />
             <p className="text-sm text-gray-500 mt-1">
-              Nome exibido no header, footer, admin e título do site
+              Nome principal do site: faixa colorida do topo (cor primária), cabeçalho ao lado do logo,
+              rodapé, painel admin e página Sobre. Salve para aplicar em todo o site.
             </p>
           </div>
 
@@ -281,7 +286,8 @@ export default function SettingsManager() {
               placeholder="CONCORRA A 10 MIL REAIS HOJE!"
             />
             <p className="text-sm text-gray-500 mt-1">
-              Mensagem que aparece na faixa azul em rotação no topo da página inicial
+              Frase em rolagem horizontal na faixa logo abaixo do header (usa a cor primária). É
+              independente do &quot;Nome da plataforma&quot; acima.
             </p>
           </div>
 

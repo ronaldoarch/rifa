@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/admin/ErrorBoundary'
+import { useSiteBootstrap } from '@/components/SiteBootstrapProvider'
 
 // Lazy load components to prevent SSR issues
 const Dashboard = dynamic(() => import('@/components/admin/Dashboard'), {
@@ -131,30 +132,16 @@ const ShowcaseManager = dynamic(() => import('@/components/admin/ShowcaseManager
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
+  const { platformName } = useSiteBootstrap()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    // Checar role antes de carregar o painel — evita flash da UI para role=user
     fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
         if (!data?.user || data.user.role !== 'admin') {
           window.location.href = '/login?redirect=' + encodeURIComponent('/admin')
-          return
         }
-        return fetch('/api/admin/config', { credentials: 'include' })
-      })
-      .then((res) => {
-        if (!res) return null
-        if (res.status === 401 || res.status === 403) {
-          window.location.href = '/login?redirect=' + encodeURIComponent('/admin')
-          return null
-        }
-        return res.json()
-      })
-      .then((data) => {
-        if (data && data.PLATFORM_NAME) setPlatformName(data.PLATFORM_NAME)
       })
       .catch(() => {})
   }, [])

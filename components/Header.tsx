@@ -4,26 +4,15 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { User, Menu, X } from 'lucide-react'
-import { fetchSiteConfigJson } from '@/lib/site-config-fetch'
+import { useSiteBootstrap } from '@/components/SiteBootstrapProvider'
 
 export default function Header() {
   const pathname = usePathname()
-  const [platformName, setPlatformName] = useState('PIX DO JONATHAN')
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const { platformName, logoUrl } = useSiteBootstrap()
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => setMenuOpen(false), [pathname])
-
-  useEffect(() => {
-    fetchSiteConfigJson()
-      .then((res) => res.json())
-      .then((data) => {
-        if (typeof data.platformName === 'string') setPlatformName(data.platformName)
-        setLogoUrl(typeof data.logoUrl === 'string' && data.logoUrl ? data.logoUrl : null)
-      })
-      .catch(() => {})
-  }, [])
 
   const fetchUser = () => {
     fetch('/api/auth/me', { credentials: 'include' })

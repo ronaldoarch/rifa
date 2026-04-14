@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
-import { prisma } from '@/lib/prisma'
+import { getSiteBootstrap } from '@/lib/site-bootstrap'
 import ThemeInjector from '@/components/ThemeInjector'
 import Providers from '@/components/Providers'
+import { SiteBootstrapProvider } from '@/components/SiteBootstrapProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,27 +16,9 @@ export const viewport = {
   themeColor: '#FFD700',
 }
 
-async function getPlatformName(): Promise<string> {
-  try {
-    const c = await prisma.config.findUnique({ where: { key: 'PLATFORM_NAME' } })
-    return c?.value || 'PIX DO JONATHAN'
-  } catch {
-    return 'PIX DO JONATHAN'
-  }
-}
-
-async function getLogoUrl(): Promise<string | null> {
-  try {
-    const c = await prisma.config.findUnique({ where: { key: 'LOGO_URL' } })
-    const v = c?.value?.trim()
-    return v || null
-  } catch {
-    return null
-  }
-}
-
 export async function generateMetadata(): Promise<Metadata> {
-  const [platformName, logoUrl] = await Promise.all([getPlatformName(), getLogoUrl()])
+  const b = await getSiteBootstrap()
+  const { platformName, logoUrl } = b
   const base: Metadata = {
     title: `${platformName} - 5 Milhões em Prêmios`,
     description: 'Acumule pontos, troque por vantagens e concorra a grandes prêmios',
@@ -49,11 +32,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return base
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const siteBootstrap = await getSiteBootstrap()
+
   return (
     <html lang="pt-BR">
       <head>
@@ -107,8 +92,10 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className} suppressHydrationWarning>
-        <ThemeInjector />
-        <Providers>{children}</Providers>
+        <SiteBootstrapProvider value={siteBootstrap}>
+          <ThemeInjector />
+          <Providers>{children}</Providers>
+        </SiteBootstrapProvider>
       </body>
     </html>
   )
