@@ -103,13 +103,13 @@ export default function PromotionalBanners() {
               key={raffle.id}
               className="bg-white border-2 border-gray-200 rounded-lg shadow-lg text-gray-900 overflow-hidden flex flex-col h-full"
             >
-              <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-gray-100 shrink-0">
+              <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-neutral-100 shrink-0">
                 {raffle.imageUrl?.trim() ? (
                   // eslint-disable-next-line @next/next/no-img-element -- URL dinâmica (admin/uploads)
                   <img
                     src={raffle.imageUrl.trim()}
                     alt={raffle.title}
-                    className="absolute inset-0 h-full w-full object-cover object-center"
+                    className="absolute inset-0 h-full w-full object-contain object-center"
                     loading="lazy"
                   />
                 ) : (

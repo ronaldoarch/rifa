@@ -216,12 +216,12 @@ function PurchaseContent() {
             <div className="space-y-6">
               <div className="bg-gray-50 rounded-lg overflow-hidden">
                 {raffleLoadState === 'ready' && raffleImageUrl && (
-                  <div className="relative w-full aspect-[16/10] bg-gray-200">
+                  <div className="relative w-full aspect-[16/10] bg-neutral-100">
                     {/* eslint-disable-next-line @next/next/no-img-element -- URL dinâmica (admin/uploads) */}
                     <img
                       src={raffleImageUrl}
                       alt={raffleTitle || 'Rifa'}
-                      className="absolute inset-0 h-full w-full object-cover object-center"
+                      className="absolute inset-0 h-full w-full object-contain object-center"
                     />
                   </div>
                 )}
