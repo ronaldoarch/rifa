@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
 import { rateLimit } from '@/lib/rate-limit'
+import { setSessionCookie } from '@/lib/session-cookie'
 
 export async function POST(request: NextRequest) {
   const limit = rateLimit('login', request, 5, 60_000)
@@ -60,17 +61,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const cookie = `session=${token}; Path=/; HttpOnly; Max-Age=2592000; SameSite=Lax`
-    return NextResponse.json(
-      {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
+    const res = NextResponse.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role ?? 'user',
       },
-      { headers: { 'Set-Cookie': cookie } }
-    )
+    })
+    setSessionCookie(res, token)
+    return res
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(

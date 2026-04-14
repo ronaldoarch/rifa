@@ -8,9 +8,15 @@ Após criar sua conta, promova-se a admin via SQL ou Prisma Studio:
 
 ```sql
 UPDATE "User" SET role = 'admin' WHERE email = 'seu-email@exemplo.com';
+-- ou pelo CPF (11 dígitos, só números):
+UPDATE "User" SET role = 'admin' WHERE cpf = '00000000000';
 ```
 
 Ou use o painel admin: em **Usuários**, edite seu usuário e altere o role para `admin`.
+
+Se o login funciona mas o site volta ao login ao abrir `/admin`, a conta está autenticada como **usuário comum** (`role = user`). Só quem tem `role = 'admin'` no banco acede ao painel.
+
+**Cookie em HTTPS:** em produção o cookie de sessão usa `Secure`. Se o deploy não tiver `NODE_ENV=production`, defina `COOKIE_SECURE=true` nas variáveis de ambiente.
 
 ### 2. Variáveis de ambiente obrigatórias
 

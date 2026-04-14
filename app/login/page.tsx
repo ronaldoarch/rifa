@@ -14,6 +14,12 @@ function LoginForm() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
 
+  const reason = searchParams.get('reason')
+  const reasonMessage =
+    reason === 'not_admin'
+      ? 'Esta conta não tem permissão de administrador. Peça a um admin para promover o seu usuário ou execute o SQL no banco (ver SECURITY.md).'
+      : ''
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -38,6 +44,14 @@ function LoginForm() {
         return
       }
       const next = searchParams.get('redirect') || searchParams.get('next') || '/comprar'
+      const wantsAdmin = next === '/admin' || next.startsWith('/admin')
+      if (wantsAdmin && data.user?.role !== 'admin') {
+        setError(
+          'Esta conta não tem permissão de administrador. Um admin deve promover o seu usuário no banco (role = admin) — ver SECURITY.md.'
+        )
+        setSubmitting(false)
+        return
+      }
       router.push(next)
     } catch (_) {
       setError('Erro de conexão. Tente de novo.')
@@ -57,6 +71,11 @@ function LoginForm() {
             Identifique-se usando seu CPF
           </p>
           
+          {reasonMessage && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-sm">
+              {reasonMessage}
+            </div>
+          )}
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
               {error}

@@ -140,7 +140,12 @@ export default function AdminPanel() {
       .then((res) => res.json())
       .then((data) => {
         if (!data?.user || data.user.role !== 'admin') {
-          window.location.href = '/login?redirect=' + encodeURIComponent('/admin')
+          const q = new URLSearchParams()
+          q.set('redirect', '/admin')
+          if (data?.user && data.user.role !== 'admin') {
+            q.set('reason', 'not_admin')
+          }
+          window.location.href = '/login?' + q.toString()
         }
       })
       .catch(() => {})

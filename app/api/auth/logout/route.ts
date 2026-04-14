@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { clearSessionCookie } from '@/lib/session-cookie'
 
 /** Encerra a sessão (remove cookie e opcionalmente o registro no banco). */
 export async function POST(request: NextRequest) {
@@ -9,6 +10,7 @@ export async function POST(request: NextRequest) {
       await prisma.session.deleteMany({ where: { token } })
     } catch (_) {}
   }
-  const cookie = `session=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax`
-  return NextResponse.json({ ok: true }, { headers: { 'Set-Cookie': cookie } })
+  const res = NextResponse.json({ ok: true })
+  clearSessionCookie(res)
+  return res
 }

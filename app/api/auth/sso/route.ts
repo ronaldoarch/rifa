@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
+import { setSessionCookie } from '@/lib/session-cookie'
 
 const SSO_SECRET = process.env.SSO_SECRET || process.env.JWT_SECRET
 
@@ -85,17 +86,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const cookie = `session=${sessionToken}; Path=/; HttpOnly; Max-Age=2592000; SameSite=Lax`
-    return NextResponse.json(
-      {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
+    const res = NextResponse.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role ?? 'user',
       },
-      { headers: { 'Set-Cookie': cookie } }
-    )
+    })
+    setSessionCookie(res, sessionToken)
+    return res
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json(
