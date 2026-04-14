@@ -109,7 +109,7 @@ export default function PromotionalBanners() {
                   <img
                     src={raffle.imageUrl.trim()}
                     alt={raffle.title}
-                    className="absolute inset-0 h-full w-full object-contain object-center"
+                    className="absolute inset-0 h-full w-full object-cover object-center"
                     loading="lazy"
                   />
                 ) : (

@@ -221,7 +221,7 @@ function PurchaseContent() {
                     <img
                       src={raffleImageUrl}
                       alt={raffleTitle || 'Rifa'}
-                      className="absolute inset-0 h-full w-full object-contain object-center"
+                      className="absolute inset-0 h-full w-full object-cover object-center"
                     />
                   </div>
                 )}
