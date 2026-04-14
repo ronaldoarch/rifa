@@ -355,8 +355,9 @@ export default function PixGatewayManager() {
 
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-xl">
           <p className="text-sm text-amber-800">
-            <strong>Webhook SarrixPay:</strong> mesma URL{' '}
-            <code className="bg-amber-100 px-1 rounded">/api/payments/webhook</code>. O sistema confirma pagamentos com o evento{' '}
+            <strong>Webhook SarrixPay:</strong> use{' '}
+            <code className="bg-amber-100 px-1 rounded">/api/webhooks/sarrix</code> (como no painel da Sarrix) ou{' '}
+            <code className="bg-amber-100 px-1 rounded">/api/payments/webhook</code> — o processamento é o mesmo. Evento de confirmação:{' '}
             <code className="bg-amber-100 px-1 rounded">pix_in.succeeded</code>.
           </p>
         </div>

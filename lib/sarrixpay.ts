@@ -145,3 +145,92 @@ export async function createPixPayment(
     ...(data.qr_code?.pay_url ? { qrCode: data.qr_code.pay_url } : {}),
   }
 }
+
+export type SarrixTransactionResult =
+  | { ok: true; data: unknown }
+  | { ok: false; status: number; error: string; raw?: string }
+
+/**
+ * GET — consulta transação PIX cash-in na SarrixPay (painel admin).
+ * Tenta, em ordem: `/pix/in/transactions/{id}` e `/pix/in/charges/{id}` (variações da API Enterprise).
+ */
+export async function getSarrixTransaction(transactionId: string): Promise<SarrixTransactionResult> {
+  const trimmed = transactionId.trim()
+  if (!trimmed) {
+    return { ok: false, status: 400, error: 'ID da transação vazio' }
+  }
+
+  const { clientId, clientSecret, baseUrl } = await getCredentials()
+  if (!clientId || !clientSecret) {
+    return { ok: false, status: 503, error: 'SarrixPay não configurado (credenciais)' }
+  }
+
+  const token = await getAccessToken(baseUrl, clientId, clientSecret)
+  if (!token) {
+    return { ok: false, status: 503, error: 'SarrixPay: falha ao obter token' }
+  }
+
+  const pathId = encodeURIComponent(trimmed)
+  const urls = [`${baseUrl}/pix/in/transactions/${pathId}`, `${baseUrl}/pix/in/charges/${pathId}`]
+
+  let lastNotFound = false
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      })
+
+      const raw = await res.text()
+      let parsed: unknown
+      try {
+        parsed = raw ? JSON.parse(raw) : null
+      } catch {
+        if (res.status === 404) {
+          lastNotFound = true
+          continue
+        }
+        return {
+          ok: false,
+          status: res.status || 502,
+          error: 'Resposta inválida da SarrixPay',
+          raw: raw.slice(0, 500),
+        }
+      }
+
+      if (res.status === 404) {
+        lastNotFound = true
+        continue
+      }
+
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`
+        if (parsed && typeof parsed === 'object' && typeof (parsed as { message?: unknown }).message === 'string') {
+          msg = (parsed as { message: string }).message
+        } else if (
+          parsed &&
+          typeof parsed === 'object' &&
+          typeof (parsed as { error?: unknown }).error === 'string'
+        ) {
+          msg = (parsed as { error: string }).error
+        }
+        return { ok: false, status: res.status, error: msg, raw: raw.slice(0, 300) }
+      }
+
+      return { ok: true, data: parsed }
+    } catch (e) {
+      console.error('SarrixPay GET transaction:', e)
+      return { ok: false, status: 502, error: 'Falha ao contatar a API SarrixPay' }
+    }
+  }
+
+  if (lastNotFound) {
+    return { ok: false, status: 404, error: 'Transação não encontrada na SarrixPay' }
+  }
+  return { ok: false, status: 502, error: 'Falha ao consultar a SarrixPay' }
+}

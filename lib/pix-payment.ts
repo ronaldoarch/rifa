@@ -23,7 +23,8 @@ export interface GatewayPixResult {
   qrCode?: string
 }
 
-async function getPixGateway(): Promise<PixGatewayId> {
+/** Gateway PIX efetivo (env `PIX_GATEWAY` tem prioridade sobre Config). */
+export async function getPixGateway(): Promise<PixGatewayId> {
   const env = process.env.PIX_GATEWAY?.trim().toLowerCase()
   if (env === 'gatebox' || env === 'cyber' || env === 'xgate' || env === 'sarrix') return env
   const row = await prisma.config.findUnique({ where: { key: 'PIX_GATEWAY' } })

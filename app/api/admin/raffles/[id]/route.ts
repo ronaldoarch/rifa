@@ -61,8 +61,23 @@ export async function DELETE(
   if (authError) return authError
   try {
     const params = await context.params
-    await prisma.raffle.delete({
-      where: { id: params.id },
+    const id = params.id
+
+    await prisma.$transaction(async (tx) => {
+      const principal = await tx.config.findUnique({ where: { key: 'PRINCIPAL_RAFFLE_ID' } })
+      if (principal?.value?.trim() === id) {
+        await tx.config.upsert({
+          where: { key: 'PRINCIPAL_RAFFLE_ID' },
+          update: { value: '' },
+          create: { key: 'PRINCIPAL_RAFFLE_ID', value: '' },
+        })
+      }
+
+      await tx.winner.deleteMany({ where: { raffleId: id } })
+      await tx.ticket.deleteMany({ where: { raffleId: id } })
+      await tx.promotion.deleteMany({ where: { raffleId: id } })
+      await tx.premiumNumber.deleteMany({ where: { raffleId: id } })
+      await tx.raffle.delete({ where: { id } })
     })
 
     return NextResponse.json({ success: true })

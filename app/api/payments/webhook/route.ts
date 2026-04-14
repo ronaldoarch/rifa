@@ -4,7 +4,8 @@ import { verifyWebhookSignature } from '@/lib/webhook-verify'
 
 /**
  * Webhook para confirmação de PIX (SarrixPay, Cyber Payment, XGate, Gatebox ou genérico).
- * Configure no painel do gateway a URL: https://seu-dominio.com/api/payments/webhook
+ * Configure no painel: https://seu-dominio.com/api/payments/webhook
+ * (SarrixPay também aceita o alias /api/webhooks/sarrix — mesmo handler.)
  *
  * Segurança: defina WEBHOOK_SECRET no .env. O gateway deve enviar:
  * - X-Webhook-Secret: valor igual ao WEBHOOK_SECRET (token fixo), ou

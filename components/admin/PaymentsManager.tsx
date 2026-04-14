@@ -31,31 +31,56 @@ export default function PaymentsManager() {
   const [pagination, setPagination] = useState({ total: 0, totalPages: 0 })
   const [cancellingExpired, setCancellingExpired] = useState(false)
   const [expireMinutes, setExpireMinutes] = useState(60)
-  const [cyberModalJson, setCyberModalJson] = useState<string | null>(null)
-  const [cyberLoadingPaymentId, setCyberLoadingPaymentId] = useState<string | null>(null)
+  const [gatewayLookupModal, setGatewayLookupModal] = useState<{
+    title: string
+    body: string
+  } | null>(null)
+  const [gatewayLookupLoadingId, setGatewayLookupLoadingId] = useState<string | null>(null)
+  const [pixGateway, setPixGateway] = useState<'xgate' | 'gatebox' | 'cyber' | 'sarrix'>('xgate')
 
-  const handleCyberLookup = async (payment: Payment) => {
+  useEffect(() => {
+    fetch('/api/admin/pix-gateway', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d: { gateway?: string }) => {
+        const g = String(d.gateway || '').toLowerCase()
+        if (g === 'xgate' || g === 'gatebox' || g === 'cyber' || g === 'sarrix') {
+          setPixGateway(g)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleGatewayLookup = async (payment: Payment) => {
     const tid = payment.transactionId?.trim()
     if (!tid) {
       toast.error('Este pagamento não tem ID de transação do gateway.')
       return
     }
-    setCyberLoadingPaymentId(payment.id)
+    if (pixGateway !== 'cyber' && pixGateway !== 'sarrix') {
+      toast.error('Consulta ao gateway só está disponível para Cyber Payment ou SarrixPay.')
+      return
+    }
+    const path =
+      pixGateway === 'cyber'
+        ? `/api/admin/cyber/transactions/${encodeURIComponent(tid)}`
+        : `/api/admin/sarrix/transactions/${encodeURIComponent(tid)}`
+    const label = pixGateway === 'cyber' ? 'Cyber Payment' : 'SarrixPay'
+    setGatewayLookupLoadingId(payment.id)
     try {
-      const res = await fetch(
-        `/api/admin/cyber/transactions/${encodeURIComponent(tid)}`,
-        { credentials: 'include' }
-      )
+      const res = await fetch(path, { credentials: 'include' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        toast.error(typeof data.error === 'string' ? data.error : 'Erro ao consultar a Cyber')
+        toast.error(typeof data.error === 'string' ? data.error : `Erro ao consultar ${label}`)
         return
       }
-      setCyberModalJson(JSON.stringify(data, null, 2))
+      setGatewayLookupModal({
+        title: `Resposta ${label}`,
+        body: JSON.stringify(data, null, 2),
+      })
     } catch {
-      toast.error('Erro de rede ao consultar a Cyber')
+      toast.error(`Erro de rede ao consultar ${label}`)
     } finally {
-      setCyberLoadingPaymentId(null)
+      setGatewayLookupLoadingId(null)
     }
   }
 
@@ -150,36 +175,36 @@ export default function PaymentsManager() {
 
   return (
     <div>
-      {cyberModalJson && (
+      {gatewayLookupModal && (
         <button
           type="button"
           className="fixed inset-0 z-50 bg-black/50 border-0 cursor-default"
           aria-label="Fechar"
-          onClick={() => setCyberModalJson(null)}
+          onClick={() => setGatewayLookupModal(null)}
         />
       )}
-      {cyberModalJson && (
+      {gatewayLookupModal && (
         <div className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none">
           <div
             className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col pointer-events-auto border border-gray-200"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="cyber-modal-title"
+            aria-labelledby="gateway-lookup-modal-title"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <h3 id="cyber-modal-title" className="text-lg font-semibold text-gray-900">
-                Resposta Cyber Payment
+              <h3 id="gateway-lookup-modal-title" className="text-lg font-semibold text-gray-900">
+                {gatewayLookupModal.title}
               </h3>
               <button
                 type="button"
-                onClick={() => setCyberModalJson(null)}
+                onClick={() => setGatewayLookupModal(null)}
                 className="text-gray-500 hover:text-gray-800 text-sm font-medium px-2 py-1"
               >
                 Fechar
               </button>
             </div>
             <pre className="text-xs overflow-auto p-4 flex-1 bg-gray-50 text-gray-800 whitespace-pre-wrap break-all">
-              {cyberModalJson}
+              {gatewayLookupModal.body}
             </pre>
           </div>
         </div>
@@ -295,16 +320,26 @@ export default function PaymentsManager() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex flex-col gap-1">
-                        {payment.paymentMethod === 'pix' && payment.transactionId && (
+                        {payment.paymentMethod === 'pix' &&
+                          payment.transactionId &&
+                          (pixGateway === 'cyber' || pixGateway === 'sarrix') && (
                           <button
                             type="button"
-                            onClick={() => handleCyberLookup(payment)}
-                            disabled={cyberLoadingPaymentId === payment.id}
+                            onClick={() => handleGatewayLookup(payment)}
+                            disabled={gatewayLookupLoadingId === payment.id}
                             className="text-xs text-blue-600 hover:text-blue-800 font-medium text-left inline-flex items-center gap-1 disabled:opacity-50"
-                            title="GET /payments/transactions/{id} na API Cyber"
+                            title={
+                              pixGateway === 'sarrix'
+                                ? 'Consultar status na API SarrixPay'
+                                : 'GET /payments/transactions/{id} na API Cyber'
+                            }
                           >
                             <Cloud size={12} className="flex-shrink-0" />
-                            {cyberLoadingPaymentId === payment.id ? 'Consultando…' : 'Status na Cyber'}
+                            {gatewayLookupLoadingId === payment.id
+                              ? 'Consultando…'
+                              : pixGateway === 'sarrix'
+                                ? 'Status na SarrixPay'
+                                : 'Status na Cyber'}
                           </button>
                         )}
                         {payment.status === 'pending' && (
