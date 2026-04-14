@@ -182,8 +182,8 @@ export default function AdminPanel() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-100">
-        <div className="flex">
+      <div className="min-h-dvh min-h-screen bg-gray-100">
+        <div className="flex min-h-0 w-full">
         {/* Top bar mobile: hamburger para abrir menu */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-gray-800 text-white flex items-center justify-between px-4 shadow">
           <button
@@ -251,8 +251,16 @@ export default function AdminPanel() {
           </nav>
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 md:ml-64 pt-14 md:pt-0 p-4 sm:p-6 md:p-8 text-gray-900 min-w-0 min-h-0">
+        {/* Main content: no mobile força scroll nesta coluna (flex + viewport fixa quebrava rolagem no iOS/Android) */}
+        <main
+          className="
+            flex-1 md:ml-64 pt-14 md:pt-0 p-4 sm:p-6 md:p-8 text-gray-900
+            min-w-0 min-h-0
+            overflow-x-hidden overflow-y-auto overscroll-y-contain touch-pan-y
+            max-h-[100dvh] md:max-h-none md:overflow-y-visible
+            pb-[max(1rem,env(safe-area-inset-bottom))]
+          "
+        >
           {activeTab === 'dashboard' && (
             <div>
               <Dashboard />

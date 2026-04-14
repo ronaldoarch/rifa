@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,6 +11,9 @@ import {
   Cell,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
+
+/** Altura fixa em px; evita width/height -1 do Recharts quando o pai ainda não tem layout (mobile/flex). */
+const CHART_HEIGHT = 288
 
 interface MetricsChartProps {
   totalRevenue: number
@@ -47,17 +51,28 @@ export default function MetricsChart({
   const formatValue = (value: number, format: string) =>
     format === 'currency' ? formatCurrency(value) : value.toLocaleString('pt-BR')
 
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    // Um tick após montagem para o container ter largura/altura definida (evita -1 no ResizeObserver).
+    const id = requestAnimationFrame(() => setReady(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-w-0 w-full">
       <div className="px-6 pt-6 pb-2">
         <h3 className="text-lg font-semibold text-gray-900">Métricas</h3>
         <p className="text-sm text-gray-500 mt-0.5">
           Visão geral da arrecadação, pedidos e bilhetes
         </p>
       </div>
-      <div className="px-4 pb-6 pt-2">
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
+      <div className="px-4 pb-6 pt-2 min-w-0">
+        <div
+          className="w-full min-w-0 min-h-[288px]"
+          style={{ height: CHART_HEIGHT }}
+        >
+          {ready ? (
+          <ResponsiveContainer width="100%" height={CHART_HEIGHT} minWidth={0} debounce={32}>
             <BarChart
               data={data}
               layout="vertical"
@@ -130,6 +145,9 @@ export default function MetricsChart({
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          ) : (
+            <div className="h-full w-full animate-pulse rounded-lg bg-gray-100" aria-hidden />
+          )}
         </div>
         <div className="flex flex-wrap gap-4 justify-center mt-4 pt-4 border-t border-gray-100">
           {data.map((item, i) => (
