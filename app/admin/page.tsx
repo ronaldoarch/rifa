@@ -212,7 +212,7 @@ export default function AdminPanel() {
         <aside
           className={`
             w-64 max-w-[min(100vw,16rem)] bg-gray-800 text-white fixed left-0 top-0 z-50
-            h-dvh max-h-dvh flex flex-col overflow-hidden
+            h-dvh max-h-dvh min-h-0 flex flex-col overflow-hidden
             transform transition-transform duration-200 ease-out md:block
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${
@@ -236,23 +236,30 @@ export default function AdminPanel() {
               <X size={24} />
             </button>
           </div>
-          <nav className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain py-2 pb-6 md:touch-auto">
-            {menuItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => selectTab(item.id)}
-                  className={`w-full flex items-center space-x-3 px-6 py-3 hover:bg-gray-700 transition-colors ${
-                    activeTab === item.id ? 'bg-gray-700 border-l-4 border-yellow-400' : ''
-                  }`}
-                >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
-                </button>
-              )
-            })}
-          </nav>
+          {/* Wrapper com altura limitada: só assim o overflow-y gera scroll (flex-1 sozinho falha em alguns browsers) */}
+          <div className="min-h-0 flex-1 flex flex-col overflow-hidden">
+            <nav
+              className="min-h-0 max-h-[calc(100dvh-9rem)] flex-1 overflow-y-auto overflow-x-hidden overscroll-y-auto py-2 pb-6 [scrollbar-gutter:stable] md:max-h-[calc(100dvh-8.5rem)]"
+              aria-label="Menu administrativo"
+            >
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selectTab(item.id)}
+                    className={`w-full flex items-center space-x-3 px-6 py-3 text-left hover:bg-gray-700 transition-colors ${
+                      activeTab === item.id ? 'bg-gray-700 border-l-4 border-yellow-400' : ''
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                  </button>
+                )
+              })}
+            </nav>
+          </div>
         </aside>
 
         {/* Main: no desktop scroll interno (altura fixa à viewport); no mobile rolagem da página */}
