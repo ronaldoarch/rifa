@@ -211,27 +211,28 @@ export default function AdminPanel() {
         {/* Sidebar: drawer no mobile, fixo no desktop */}
         <aside
           className={`
-            w-64 bg-gray-800 text-white min-h-screen fixed left-0 top-0 bottom-0 z-50
+            w-64 max-w-[min(100vw,16rem)] bg-gray-800 text-white fixed left-0 top-0 z-50
+            h-dvh max-h-dvh flex flex-col overflow-hidden
             transform transition-transform duration-200 ease-out
             md:translate-x-0 md:block
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           `}
         >
-          <div className="p-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{platformName}</h1>
+          <div className="p-6 flex items-center justify-between shrink-0 border-b border-gray-700/60">
+            <div className="min-w-0 pr-2">
+              <h1 className="text-2xl font-bold truncate">{platformName}</h1>
               <p className="text-gray-400 text-sm mt-2">Painel Administrativo</p>
             </div>
             <button
               type="button"
               onClick={closeSidebar}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-700"
+              className="md:hidden shrink-0 p-2 rounded-lg hover:bg-gray-700"
               aria-label="Fechar menu"
             >
               <X size={24} />
             </button>
           </div>
-          <nav className="mt-8">
+          <nav className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y py-2 pb-6">
             {menuItems.map((item) => {
               const Icon = item.icon
               return (
@@ -251,7 +252,7 @@ export default function AdminPanel() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 md:ml-64 pt-14 md:pt-0 p-4 sm:p-6 md:p-8 text-gray-900 min-w-0 overflow-x-auto">
+        <main className="flex-1 md:ml-64 pt-14 md:pt-0 p-4 sm:p-6 md:p-8 text-gray-900 min-w-0 min-h-0">
           {activeTab === 'dashboard' && (
             <div>
               <Dashboard />
