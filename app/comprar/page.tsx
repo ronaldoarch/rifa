@@ -313,7 +313,8 @@ function PurchaseContent() {
                   <h3 className="text-xl font-bold text-green-800 mb-2">Pagamento Confirmado!</h3>
                   <p className="text-green-700 mb-6">Seus tickets foram reservados com sucesso.</p>
                   <button
-                    onClick={() => router.push('/minha-conta')}
+                    type="button"
+                    onClick={() => router.push('/perfil')}
                     className="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-colors"
                   >
                     Ver meus tickets
