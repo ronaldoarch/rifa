@@ -10,10 +10,19 @@ FROM node:20-bullseye AS base
 FROM base AS deps
 WORKDIR /app
 
+# Reduz OOM durante install em servidores com pouca RAM (Coolify)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Sem NODE_ENV=production aqui — npm ci instala devDependencies (necessário para o build Next)
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 # Copy package files
 COPY package.json package-lock.json* ./
-# Install all dependencies including devDependencies for build
-RUN npm ci --include=dev
+# --no-audit/--no-fund aceleram; dev deps vêm pelo lockfile (não usar --omit=dev)
+# Cache npm (BuildKit) reduz rede e tempo em rebuilds no Coolify
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
 
 # Rebuild the source code only when needed
 FROM base AS builder
