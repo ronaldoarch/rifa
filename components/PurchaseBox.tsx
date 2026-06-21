@@ -74,15 +74,15 @@ export default function PurchaseBox({ quantity, setQuantity, principalRaffle }: 
       {/* Quantity selector */}
       <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
         <button
-          onClick={() => setQuantity(Math.max(minQty, quantity - 1))}
-          disabled={quantity <= minQty}
+          onClick={() => setQuantity(Math.max(minQty, effectiveQty - 1))}
+          disabled={effectiveQty <= minQty}
           className="bg-green-800 text-white p-1.5 sm:p-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Minus size={18} className="sm:w-5 sm:h-5" />
         </button>
         <span className="text-white text-xl sm:text-2xl font-bold">{effectiveQty}</span>
         <button
-          onClick={() => setQuantity(quantity + 1)}
+          onClick={() => setQuantity(effectiveQty + 1)}
           className="bg-green-800 text-white p-1.5 sm:p-2 rounded hover:bg-green-700"
         >
           <Plus size={18} className="sm:w-5 sm:h-5" />
